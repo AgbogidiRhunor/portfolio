@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Projects | Rhunor A</title>
+    <meta name="description" content="Explore all software engineering projects by Rhunor A — backend systems, full-stack applications, and architecture case studies.">
+    <meta property="og:title" content="All Projects — Rhunor A">
+    <meta property="og:description" content="A collection of software engineering projects, from backend APIs to full-stack platforms.">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="All Projects — Rhunor A">
+    <meta name="twitter:description" content="Backend systems, full-stack apps, and engineering case studies.">
+
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['SF Pro Display', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['SF Mono', 'JetBrains Mono', 'Fira Code', 'ui-monospace', 'monospace'],
+                    },
+                    animation: {
+                        'float': 'float 8s ease-in-out infinite',
+                        'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards',
+                    },
+                    keyframes: {
+                        float: { '0%, 100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-12px)' } },
+                        fadeInUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                    },
+                },
+            },
+        };
+    </script>
+
+    <style>
+        :root {
+            --bg: #08080a;
+            --card: #1c1c1e;
+            --border: rgba(255, 255, 255, 0.06);
+            --text: #e8e8ed;
+            --text-secondary: #98989d;
+        }
+
+        /* REMOVED transform from body - it was breaking the sticky nav */
+        body {
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            letter-spacing: -0.01em;
+        }
+
+        /* Applied transform to a wrapper instead */
+        .page-wrapper {
+            transform: scale(1.3);
+            transform-origin: 0 0;
+            width: calc(100% / 1.3);
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3a3a3c; border-radius: 10px; }
+
+        .glass {
+            background: rgba(28, 28, 30, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+        }
+
+        .glass-hover:hover {
+            border-color: rgba(139, 92, 246, 0.25);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .gradient-border {
+            position: relative;
+            background: #1c1c1e;
+            border-radius: 18px;
+        }
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 19px;
+            padding: 1px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #14b8a6, #6366f1);
+            background-size: 300% 300%;
+            animation: borderGlow 6s ease infinite;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        @keyframes borderGlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(22px);
+            transition: opacity 0.65s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        #progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            z-index: 100;
+            transition: width 0.1s linear;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .status-badge {
+            font-size: 11px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal { transition: none; opacity: 1; transform: none; }
+            * { animation-duration: 0.01ms !important; }
+        }
+    </style>
+</head>
+<body class="bg-[#08080a] text-[#e8e8ed] font-sans antialiased">
+
+    <!-- Sticky Navigation -->
+    <nav class="sticky top-0 z-40 bg-[#08080a]/80 backdrop-blur-2xl border-b border-white/[0.06]" aria-label="Main navigation">
+        <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10 flex items-center justify-between h-14">
+            <a href="./portfolio.html" class="text-sm font-medium text-[#98989d] hover:text-white transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Back to Portfolio
+            </a>
+            <div class="flex items-center gap-3">
+                <a href="./portfolio.html#projects" class="px-4 py-2 rounded-full bg-white/[0.06] border border-white/[0.08] text-xs font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">Featured</a>
+                <a href="https://github.com/AgbogidiRhunor" class="px-4 py-2 rounded-full bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs font-medium hover:bg-indigo-600/30 transition-all">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-20 pb-10 sm:pt-28 sm:pb-16 overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none select-none">
+            <div class="absolute top-1/3 left-1/3 w-72 h-72 bg-indigo-500/6 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+        </div>
+        <div class="relative max-w-4xl mx-auto px-5 sm:px-8 text-center">
+            <h1 class="reveal text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white mb-4">All Projects</h1>
+            <p class="reveal reveal-delay-1 text-lg sm:text-xl text-[#98989d] font-medium max-w-xl mx-auto">A collection of software engineering work — from backend APIs to full‑stack platforms.</p>
+            <div class="reveal reveal-delay-2 w-16 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-6"></div>
+        </div>
+    </section>
+
+    <!-- Projects Grid -->
+    <section class="pb-24 sm:pb-32">
+        <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <!-- Project 1: PointPulse -->
+                <a href="projects/pointpulse.html" class="reveal block glass glass-hover overflow-hidden transition-all duration-300 group">
+                    <div class="h-40 bg-gradient-to-br from-indigo-600/20 via-purple-600/15 to-teal-600/10 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-5xl opacity-25 group-hover:scale-110 transition-transform duration-500 select-none">🏓</span>
+                        <div class="absolute top-3 right-3">
+                            <span class="status-badge bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> In Development
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-base font-semibold text-white mb-1.5 tracking-tight">PointPulse</h3>
+                        <p class="text-[#a1a1a6] text-[13px] leading-relaxed mb-3">Configurable tournament management platform for table tennis — backend engine, statistics, offline support.</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-400">React Native</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400">FastAPI</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-teal-500/10 text-teal-400">PostgreSQL</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-rose-500/10 text-rose-400">Redis</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Project 2: Hospital Management System -->
+                <a href="projects/hospital.html" class="reveal block glass glass-hover overflow-hidden transition-all duration-300 group">
+                    <div class="h-40 bg-gradient-to-br from-blue-600/20 via-cyan-600/15 to-teal-600/10 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-5xl opacity-25 group-hover:scale-110 transition-transform duration-500 select-none">🏥</span>
+                        <div class="absolute top-3 right-3">
+                            <span class="status-badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Completed
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-base font-semibold text-white mb-1.5 tracking-tight">Hospital Management System</h3>
+                        <p class="text-[#a1a1a6] text-[13px] leading-relaxed mb-3">Multi-role healthcare platform with patient management, appointments, prescriptions, and secure authentication.</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-400">Django</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400">DRF</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-teal-500/10 text-teal-400">PostgreSQL</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Project 3: SIWES Logbook Manager -->
+                <a href="projects/logbook.html" class="reveal block glass glass-hover overflow-hidden transition-all duration-300 group">
+                    <div class="h-40 bg-gradient-to-br from-emerald-600/20 via-green-600/15 to-teal-600/10 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-5xl opacity-25 group-hover:scale-110 transition-transform duration-500 select-none">📒</span>
+                        <div class="absolute top-3 right-3">
+                            <span class="status-badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Completed
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-base font-semibold text-white mb-1.5 tracking-tight">SIWES Logbook Manager</h3>
+                        <p class="text-[#a1a1a6] text-[13px] leading-relaxed mb-3">Digital internship management platform for students, supervisors, lecturers, and administrators.</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-400">Django</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400">PostgreSQL</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-400">AWS EC2</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Project 4: FastAPI Tournament Backend -->
+                <a href="projects/fastapi-tournament.html" class="reveal block glass glass-hover overflow-hidden transition-all duration-300 group">
+                    <div class="h-40 bg-gradient-to-br from-sky-600/20 via-indigo-600/15 to-blue-600/10 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-5xl opacity-25 group-hover:scale-110 transition-transform duration-500 select-none">⚡</span>
+                        <div class="absolute top-3 right-3">
+                            <span class="status-badge bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> In Development
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-base font-semibold text-white mb-1.5 tracking-tight">FastAPI Tournament Backend</h3>
+                        <p class="text-[#a1a1a6] text-[13px] leading-relaxed mb-3">High-performance tournament API with FastAPI, SQLAlchemy, Alembic, and clean architecture.</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-400">FastAPI</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400">SQLAlchemy</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-teal-500/10 text-teal-400">Alembic</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Project 5: Soundora -->
+                <a href="projects/soundora.html" class="reveal block glass glass-hover overflow-hidden transition-all duration-300 group">
+                    <div class="h-40 bg-gradient-to-br from-violet-600/20 via-purple-600/15 to-fuchsia-600/10 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-5xl opacity-25 group-hover:scale-110 transition-transform duration-500 select-none">🎵</span>
+                        <div class="absolute top-3 right-3">
+                            <span class="status-badge bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Paused
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-base font-semibold text-white mb-1.5 tracking-tight">Soundora</h3>
+                        <p class="text-[#a1a1a6] text-[13px] leading-relaxed mb-3">Freelance music platform — a learning experience in adapting to changing project requirements.</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-400">Django</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400">DRF</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Project 6: TurnupCity -->
+                <a href="projects/turnupcity.html" class="reveal block glass glass-hover overflow-hidden transition-all duration-300 group">
+                    <div class="h-40 bg-gradient-to-br from-orange-600/20 via-amber-600/15 to-yellow-600/10 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-5xl opacity-25 group-hover:scale-110 transition-transform duration-500 select-none">🎉</span>
+                        <div class="absolute top-3 right-3">
+                            <span class="status-badge bg-teal-500/10 text-teal-400 border border-teal-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span> Prototype
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-base font-semibold text-white mb-1.5 tracking-tight">TurnupCity</h3>
+                        <p class="text-[#a1a1a6] text-[13px] leading-relaxed mb-3">Event ticket marketplace built to explore system design concepts through practical development.</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-400">Django</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400">HTML/CSS</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Project 7: CollabNotes -->
+                <a href="projects/collabnotes.html" class="reveal block glass glass-hover overflow-hidden transition-all duration-300 group">
+                    <div class="h-40 bg-gradient-to-br from-pink-600/20 via-rose-600/15 to-red-600/10 flex items-center justify-center relative overflow-hidden">
+                        <span class="text-5xl opacity-25 group-hover:scale-110 transition-transform duration-500 select-none">📝</span>
+                        <div class="absolute top-3 right-3">
+                            <span class="status-badge bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Completed
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-base font-semibold text-white mb-1.5 tracking-tight">CollabNotes</h3>
+                        <p class="text-[#a1a1a6] text-[13px] leading-relaxed mb-3">Collaborative note-taking platform exploring clean workflows, sharing, and user experience.</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-400">Django</span>
+                            <span class="text-[11px] px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-400">HTML/CSS</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Footer note -->
+            <div class="reveal mt-12 text-center">
+                <p class="text-[#6e6e73] text-sm">Each project has a dedicated case study page. Click any card to explore the architecture, engineering decisions, and lessons learned.</p>
+                <a href="portfolio.html" class="inline-flex items-center gap-2 mt-6 px-5 py-2.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-sm text-[#d1d1d6] hover:bg-white/[0.1] transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                    Return to Portfolio
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-8 border-t border-white/[0.05] text-center text-[#6e6e73] text-xs">
+        <p>All Projects — Rhunor A. &copy; <span id="current-year"></span></p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+
+            // Progress bar
+            const progressBar = document.getElementById('progress-bar');
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const progress = (scrollTop / docHeight) * 100;
+                progressBar.style.width = Math.min(progress, 100) + '%';
+            });
+
+            // Reveal animations
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+            reveals.forEach(el => observer.observe(el));
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soundora — Case Study | Rhunor A</title>
+    <meta name="description" content="Software engineering case study: Soundora — a freelance music platform and a valuable learning experience in adapting to changing project requirements.">
+    <meta property="og:title" content="Soundora — Freelance Case Study">
+    <meta property="og:description" content="An honest engineering case study about adapting to changing requirements, client communication, and professional growth.">
+    <meta property="og:type" content="article">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Soundora — Case Study">
+    <meta name="twitter:description" content="Freelance project that became an important lesson in technology selection and professional decision-making.">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['SF Pro Display', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['SF Mono', 'JetBrains Mono', 'Fira Code', 'ui-monospace', 'monospace'],
+                    },
+                    animation: {
+                        'float': 'float 8s ease-in-out infinite',
+                        'pulse-soft': 'pulseSoft 4s ease-in-out infinite',
+                        'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards',
+                    },
+                    keyframes: {
+                        float: { '0%, 100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-12px)' } },
+                        pulseSoft: { '0%, 100%': { opacity: '0.7', transform: 'scale(1)' }, '50%': { opacity: '1', transform: 'scale(1.03)' } },
+                        fadeInUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                    },
+                },
+            },
+        };
+    </script>
+
+    <style>
+        :root {
+            --bg: #08080a;
+            --surface: #121214;
+            --card: #1c1c1e;
+            --border: rgba(255, 255, 255, 0.06);
+            --text: #e8e8ed;
+            --text-secondary: #98989d;
+            --accent: #6366f1;
+            --accent-purple: #8b5cf6;
+            --accent-teal: #14b8a6;
+            --radius: 18px;
+        }
+
+        /* REMOVED transform from body - it was breaking the sticky nav */
+        body {
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            letter-spacing: -0.01em;
+        }
+
+        /* Applied transform to a wrapper instead */
+        .page-wrapper {
+            transform: scale(1.2);
+            transform-origin: 0 0;
+            width: calc(100% / 1.2);
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3a3a3c; border-radius: 10px; }
+
+        .glass {
+            background: rgba(28, 28, 30, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+        .glass-hover:hover {
+            border-color: rgba(139, 92, 246, 0.25);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.08);
+        }
+
+        .gradient-border {
+            position: relative;
+            background: #1c1c1e;
+            border-radius: var(--radius);
+        }
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: calc(var(--radius) + 1px);
+            padding: 1px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #14b8a6, #6366f1);
+            background-size: 300% 300%;
+            animation: borderGlow 6s ease infinite;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        @keyframes borderGlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(22px);
+            transition: opacity 0.65s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        #progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            z-index: 100;
+            transition: width 0.1s linear;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .toc-sidebar { position: fixed; left: 24px; top: 50%; transform: translateY(-50%); z-index: 50; display: none; }
+        @media (min-width: 1280px) { .toc-sidebar { display: block; } }
+        .toc-link { display: block; padding: 4px 0; font-size: 13px; color: #6e6e73; transition: color 0.2s; text-decoration: none; position: relative; padding-left: 14px; }
+        .toc-link::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: #3a3a3c; transition: background 0.2s, transform 0.2s; }
+        .toc-link.active { color: #a78bfa; }
+        .toc-link.active::before { background: #a78bfa; transform: translateY(-50%) scale(1.4); }
+
+        .img-placeholder {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 140px;
+            color: #6e6e73;
+            transition: all 0.3s;
+        }
+        .img-placeholder:hover { border-color: rgba(139, 92, 246, 0.4); background: rgba(99, 102, 241, 0.04); }
+
+        /* Timeline styling */
+        .journey-timeline { position: relative; padding-left: 32px; }
+        .journey-timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, #6366f1, #8b5cf6, #f59e0b, #6366f1); border-radius: 2px; }
+        .journey-item { position: relative; margin-bottom: 32px; }
+        .journey-item::before { content: ''; position: absolute; left: -28px; top: 8px; width: 10px; height: 10px; border-radius: 50%; background: #6366f1; border: 2px solid #121214; z-index: 2; }
+        .journey-item.paused::before { background: #f59e0b; }
+        .journey-item.learned::before { background: #14b8a6; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal { transition: none; opacity: 1; transform: none; }
+            * { animation-duration: 0.01ms !important; }
+        }
+    </style>
+</head>
+<body class="bg-[#08080a] text-[#e8e8ed] font-sans antialiased">
+
+    <!-- Reading Progress Bar -->
+    <div id="progress-bar"></div>
+
+    <!-- Floating Table of Contents -->
+    <nav class="toc-sidebar" aria-label="Table of Contents">
+        <div class="glass p-4 rounded-2xl shadow-2xl" style="min-width: 170px;">
+            <p class="text-xs font-semibold text-[#98989d] mb-3 tracking-widest uppercase">On this page</p>
+            <a href="#overview" class="toc-link">Overview</a>
+            <a href="#goals" class="toc-link">Project Goals</a>
+            <a href="#work-completed" class="toc-link">Work Completed</a>
+            <a href="#journey" class="toc-link">Journey</a>
+            <a href="#challenges" class="toc-link">Challenges</a>
+            <a href="#learnings" class="toc-link">What I Learned</a>
+            <a href="#differently" class="toc-link">What I'd Do Differently</a>
+            <a href="#gallery" class="toc-link">Gallery</a>
+            <a href="#reflection" class="toc-link">Reflection</a>
+        </div>
+    </nav>
+
+    <!-- Sticky Navigation -->
+    <nav class="sticky top-0 z-40 bg-[#08080a]/80 backdrop-blur-2xl border-b border-white/[0.06]" aria-label="Project navigation">
+        <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10 flex items-center justify-between h-14">
+            <a href="../portfolio.html" class="text-sm font-medium text-[#98989d] hover:text-white transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Back to Portfolio
+            </a>
+            <div class="flex items-center gap-3">
+                <a href="YOUR_GITHUB" class="px-4 py-2 rounded-full bg-white/[0.06] border border-white/[0.08] text-xs font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-20 pb-16 sm:pt-28 sm:pb-24 overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none select-none">
+            <div class="absolute top-1/4 left-1/4 w-72 h-72 bg-indigo-500/6 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-1/3 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+        </div>
+        <div class="relative max-w-4xl mx-auto px-5 sm:px-8 text-center">
+            <div class="reveal mx-auto mb-10 max-w-2xl gradient-border overflow-hidden rounded-2xl">
+                <div class="img-placeholder h-64 sm:h-80 flex flex-col items-center justify-center bg-white/[0.01]">
+                    <svg class="w-14 h-14 text-[#3a3a3c] mb-4" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
+                    </svg>
+                    <p class="text-sm text-[#6e6e73] font-mono">Project Hero Image</p>
+                </div>
+            </div>
+            <h1 class="reveal reveal-delay-1 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white mb-4">Soundora</h1>
+            <p class="reveal reveal-delay-2 text-xl sm:text-2xl text-[#98989d] font-medium mb-6">Freelance Project • Development Paused</p>
+            <p class="reveal reveal-delay-3 text-[#a1a1a6] max-w-xl mx-auto text-[15px] leading-relaxed mb-8">A freelance music platform that became an important learning experience in adapting to changing project requirements.</p>
+            <div class="reveal reveal-delay-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/8 border border-amber-500/20 text-amber-400 text-sm">
+                <span class="relative flex h-2 w-2"><span class="inline-flex rounded-full h-2 w-2 bg-amber-400"></span></span>
+                Development Paused
+            </div>
+        </div>
+    </section>
+
+    <!-- Project Overview -->
+    <section id="overview" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Overview</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">An Honest Engineering Story</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="reveal reveal-delay-1 space-y-4 text-[#a1a1a6] leading-relaxed text-[15px]">
+                <p>Soundora began as a freelance project with a clear goal: build a modern music platform where users could organize, discover, and enjoy music through an intuitive interface. The project moved through planning, design, and initial backend implementation — establishing authentication, database models, and core application structure.</p>
+                <p>During development, the client's vision evolved. The original plan to build with Django and Django REST Framework shifted toward <strong class="text-white">React Native</strong> for cross-platform mobile delivery. At that stage, my experience with React Native was still developing, and I recognized that continuing would risk delivering work below the professional standards I hold myself to.</p>
+                <p class="text-white font-medium">Development was paused — not as a failure, but as a responsible engineering decision. Choosing to be honest about technical readiness is, in itself, an act of professionalism.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Project Goals -->
+    <section id="goals" class="py-20 sm:py-28">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Goals</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Original Project Objectives</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-4">
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Organized Music Platform</h3><p class="text-[#98989d] text-[13px]">Centralized library for browsing, searching, and managing music collections.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Clean User Experience</h3><p class="text-[#98989d] text-[13px]">Intuitive interface design focused on simplicity and ease of navigation.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">User Authentication</h3><p class="text-[#98989d] text-[13px]">Secure registration and login with personalized user profiles.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Playlist Management</h3><p class="text-[#98989d] text-[13px]">Create, edit, and organize custom playlists with drag-and-drop interactions.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Responsive Design</h3><p class="text-[#98989d] text-[13px]">Seamless experience across desktop and mobile devices.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Scalable Structure</h3><p class="text-[#98989d] text-[13px]">Modular backend architecture designed for future feature expansion.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Work Completed -->
+    <section id="work-completed" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Progress</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">What Was Accomplished</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="reveal space-y-4 text-[#a1a1a6] leading-relaxed text-[15px] mb-8">
+                <p>Before the technology direction changed, meaningful progress was made on the project's foundation. The work completed represents thoughtful planning and solid engineering practices — not throwaway code, but a genuine effort to build a quality product.</p>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5">
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Project Planning</h3><p class="text-[#98989d] text-[13px]">Defined scope, gathered requirements, and created a structured development roadmap.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Project Structure</h3><p class="text-[#98989d] text-[13px]">Designed modular architecture separating concerns across Django apps and services.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Backend Foundation</h3><p class="text-[#98989d] text-[13px]">Implemented core functionality with Django and Django REST Framework.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Authentication System</h3><p class="text-[#98989d] text-[13px]">Built secure user registration and login with session management.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Database Models</h3><p class="text-[#98989d] text-[13px]">Created normalized schema for users, playlists, and music metadata.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Initial UI Development</h3><p class="text-[#98989d] text-[13px]">Developed responsive frontend templates with HTML, CSS, and Bootstrap.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Development Journey -->
+    <section id="journey" class="py-20 sm:py-28">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Journey</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Development Timeline</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="journey-timeline">
+                <div class="journey-item reveal">
+                    <span class="text-indigo-400 text-[11px] font-mono">Phase 1</span>
+                    <h4 class="text-sm font-semibold text-white mt-1">Project Planning</h4>
+                    <p class="text-[#98989d] text-[13px] mt-1">Defined scope, gathered client requirements, and established technology direction with Django as the core stack.</p>
+                </div>
+                <div class="journey-item reveal">
+                    <span class="text-indigo-400 text-[11px] font-mono">Phase 2</span>
+                    <h4 class="text-sm font-semibold text-white mt-1">Requirement Gathering</h4>
+                    <p class="text-[#98989d] text-[13px] mt-1">Collaborated with the client to understand target users, platform goals, and feature priorities.</p>
+                </div>
+                <div class="journey-item reveal">
+                    <span class="text-indigo-400 text-[11px] font-mono">Phase 3</span>
+                    <h4 class="text-sm font-semibold text-white mt-1">Application Design</h4>
+                    <p class="text-[#98989d] text-[13px] mt-1">Designed database schema, API structure, and frontend component architecture.</p>
+                </div>
+                <div class="journey-item reveal">
+                    <span class="text-indigo-400 text-[11px] font-mono">Phase 4</span>
+                    <h4 class="text-sm font-semibold text-white mt-1">Backend Development</h4>
+                    <p class="text-[#98989d] text-[13px] mt-1">Implemented authentication, database models, API endpoints, and core business logic with Django and DRF.</p>
+                </div>
+                <div class="journey-item reveal paused">
+                    <span class="text-amber-400 text-[11px] font-mono">Phase 5</span>
+                    <h4 class="text-sm font-semibold text-white mt-1">Requirement Changes</h4>
+                    <p class="text-[#98989d] text-[13px] mt-1">Client decided to transition from Django to React Native for cross-platform mobile capabilities.</p>
+                </div>
+                <div class="journey-item reveal paused">
+                    <span class="text-amber-400 text-[11px] font-mono">Phase 6</span>
+                    <h4 class="text-sm font-semibold text-white mt-1">Technology Transition Discussion</h4>
+                    <p class="text-[#98989d] text-[13px] mt-1">Evaluated the new requirements against current technical readiness and project timeline.</p>
+                </div>
+                <div class="journey-item reveal paused">
+                    <span class="text-amber-400 text-[11px] font-mono">Phase 7</span>
+                    <h4 class="text-sm font-semibold text-white mt-1">Development Paused</h4>
+                    <p class="text-[#98989d] text-[13px] mt-1">Made the professional decision to pause development rather than deliver substandard work with unfamiliar technology.</p>
+                </div>
+                <div class="journey-item reveal learned">
+                    <span class="text-teal-400 text-[11px] font-mono">Phase 8</span>
+                    <h4 class="text-sm font-semibold text-white mt-1">Lessons Learned</h4>
+                    <p class="text-[#98989d] text-[13px] mt-1">Reflected on the experience, documented insights, and applied learnings to future projects.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Challenges -->
+    <section id="challenges" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Challenges</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Real-World Engineering Realities</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="space-y-5">
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Changing Client Requirements</h3><p class="text-[#a1a1a6] text-[13px] mt-2">Mid-project, the client's vision shifted significantly. What began as a web application evolved into a cross-platform mobile requirement — a change that fundamentally altered the technology needs. This taught me that requirements are rarely static and that adaptability is a core engineering skill.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Technology Stack Transition</h3><p class="text-[#a1a1a6] text-[13px] mt-2">Moving from Django to React Native represented more than a framework change — it meant rethinking the entire architecture, development workflow, and delivery timeline. I recognized the gap between my current expertise and what the new direction demanded.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Balancing Expectations with Readiness</h3><p class="text-[#a1a1a6] text-[13px] mt-2">As engineers, we want to say yes to challenges. But professional integrity means knowing when to be honest about limitations. Balancing the client's enthusiasm with a realistic assessment of my capabilities was difficult but necessary.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Making Responsible Decisions</h3><p class="text-[#a1a1a6] text-[13px] mt-2">Choosing to pause development rather than push forward with unfamiliar technology was not an easy decision — but it was the right one. Delivering substandard work would have damaged trust and resulted in a product that didn't meet expectations. Professionalism sometimes means knowing when to step back.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What I Learned -->
+    <section id="learnings" class="py-20 sm:py-28">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Growth</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">What I Learned</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5 text-[#a1a1a6] text-[14px]">
+                <div class="reveal glass p-5"><strong class="text-white block mb-2 text-sm">Working with Clients</strong>Direct client interaction taught me to listen carefully, ask clarifying questions, and document expectations clearly from the start.</div>
+                <div class="reveal glass p-5"><strong class="text-white block mb-2 text-sm">Requirement Analysis</strong>I learned that thorough requirement gathering upfront prevents costly misunderstandings later in the development cycle.</div>
+                <div class="reveal glass p-5"><strong class="text-white block mb-2 text-sm">Technology Selection Matters</strong>Choosing the right stack isn't just about what's popular — it's about what aligns with project goals, team expertise, and long-term maintainability.</div>
+                <div class="reveal glass p-5"><strong class="text-white block mb-2 text-sm">Honest Communication</strong>Being transparent about technical limitations builds more trust than overpromising and underdelivering. Clients respect honesty.</div>
+                <div class="reveal glass p-5"><strong class="text-white block mb-2 text-sm">Adaptability</strong>Requirements change — that's a reality of software development. The ability to reassess and adapt is as valuable as technical skill.</div>
+                <div class="reveal glass p-5"><strong class="text-white block mb-2 text-sm">Knowing When to Pause</strong>Professional maturity includes recognizing when continuing would compromise quality. Pausing a project is not failure — it's responsible engineering.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What I Would Do Differently -->
+    <section id="differently" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Reflection</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">What I Would Do Differently Today</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="reveal space-y-4 text-[#a1a1a6] leading-relaxed text-[15px]">
+                <p>Since Soundora, I've continued expanding my skills across backend engineering, system design, cloud technologies, and modern application development. Today, I approach projects with greater emphasis on <strong class="text-white">planning</strong>, <strong class="text-white">scalability</strong>, and <strong class="text-white">selecting technologies that align with project goals</strong> from the very beginning.</p>
+                <p>I now understand that the discovery phase — where technology choices are evaluated against requirements, team capabilities, and long-term vision — is one of the most critical stages of any project. Had I been more experienced at the time, I would have facilitated deeper discussions about the technology direction earlier in the process, potentially aligning expectations before development began.</p>
+                <p>This experience didn't discourage me — it <strong class="text-white">sharpened my judgment</strong>. It reinforced that great software engineering isn't just about writing code. It's about communication, planning, adaptability, and the integrity to make difficult decisions when they serve the best interests of the project and the client.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshot Gallery -->
+    <section id="gallery" class="py-20 sm:py-28">
+        <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="text-center mb-14 reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Gallery</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight">Project Artifacts</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Project Planning</span></div>
+                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Wireframes</span></div>
+                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Authentication</span></div>
+                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Development Progress</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final Reflection -->
+    <section id="reflection" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-3xl mx-auto px-5 sm:px-8 lg:px-10 text-center">
+            <div class="reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Reflection</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-8">An Important Milestone</h2>
+            </div>
+            <div class="reveal reveal-delay-1 space-y-5 text-[#a1a1a6] leading-relaxed text-[15px]">
+                <p>Although Soundora was never completed, it remains an important milestone in my journey as a software engineer. It taught me that successful software development is not only about writing code — it's about <strong class="text-white">communication</strong>, <strong class="text-white">planning</strong>, <strong class="text-white">adaptability</strong>, and making <strong class="text-white">professional decisions</strong> when project requirements change.</p>
+                <p>This experience encouraged me to keep learning and ultimately strengthened the way I approach software engineering today. It reinforced that honesty, integrity, and a commitment to quality matter more than simply shipping code. Every project — whether completed or paused — contributes to the engineer you become.</p>
+                <p class="text-white font-medium">I continue to grow, to learn, and to build — carrying forward the lessons that Soundora taught me about what it truly means to be a professional software engineer.</p>
+            </div>
+            <div class="reveal reveal-delay-2 mt-10">
+                <div class="flex items-center justify-center gap-4">
+                    <a href="../projects/fastapi-tournament.html" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.06] border border-white/[0.1] text-sm font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        Previous Project
+                    </a>
+
+                    <!-- Back to Portfolio -->
+                    <a href="../portfolio.html" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.06] border border-white/[0.1] text-sm font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">
+                        
+                        Back to Portfolio
+                    </a>
+
+                    <!-- Next Project (adjust href to your actual next case study) -->
+                    <a href="../projects/turnupcity.html" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.06] border border-white/[0.1] text-sm font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">
+                        Next Project
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+                </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-8 border-t border-white/[0.05] text-center text-[#6e6e73] text-xs">
+        <p>Soundora — A valuable chapter in my engineering journey. &copy; <span id="current-year"></span></p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+            const progressBar = document.getElementById('progress-bar');
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const progress = (scrollTop / docHeight) * 100;
+                progressBar.style.width = progress + '%';
+            });
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); } });
+            }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+            reveals.forEach(el => observer.observe(el));
+            const tocLinks = document.querySelectorAll('.toc-link');
+            const sections = document.querySelectorAll('section[id]');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => { if (window.scrollY >= section.offsetTop - 120) current = section.getAttribute('id'); });
+                tocLinks.forEach(link => { link.classList.remove('active'); if (link.getAttribute('href') === '#' + current) link.classList.add('active'); });
+            });
+            tocLinks.forEach(link => { link.addEventListener('click', function(e) { e.preventDefault(); const target = document.querySelector(this.getAttribute('href')); if (target) window.scrollTo({ top: target.offsetTop - 80, behavior: 'smooth' }); }); });
+        });
+    </script>
+</body>
+</html>

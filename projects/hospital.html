@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Management System — Case Study | Rhunor A</title>
+    <meta name="description" content="Engineering case study: A role-based healthcare management platform built with Django, DRF, PostgreSQL. Streamlining hospital operations, patient care, and workflows.">
+    <meta property="og:title" content="Hospital Management System — Case Study">
+    <meta property="og:description" content="Backend engineering: Django, DRF, PostgreSQL. Multi-role system for healthcare administration.">
+    <meta property="og:type" content="article">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Hospital Management System — Case Study">
+    <meta name="twitter:description" content="Role-based healthcare platform: Django, DRF, PostgreSQL, JWT auth.">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['SF Pro Display', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['SF Mono', 'JetBrains Mono', 'Fira Code', 'ui-monospace', 'monospace'],
+                    },
+                    animation: {
+                        'float': 'float 8s ease-in-out infinite',
+                        'pulse-soft': 'pulseSoft 4s ease-in-out infinite',
+                        'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-12px)' },
+                        },
+                        pulseSoft: {
+                            '0%, 100%': { opacity: '0.7', transform: 'scale(1)' },
+                            '50%': { opacity: '1', transform: 'scale(1.03)' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                    },
+                },
+            },
+        };
+    </script>
+
+    <style>
+        :root {
+            --bg: #08080a;
+            --surface: #121214;
+            --card: #1c1c1e;
+            --border: rgba(255, 255, 255, 0.06);
+            --text: #e8e8ed;
+            --text-secondary: #98989d;
+            --accent: #6366f1;
+            --accent-purple: #8b5cf6;
+            --accent-teal: #14b8a6;
+            --radius: 18px;
+        }
+
+        /* REMOVED transform from body - it was breaking the sticky nav */
+        body {
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            letter-spacing: -0.01em;
+        }
+
+        /* Applied transform to a wrapper instead */
+        .page-wrapper {
+            transform: scale(1.2);
+            transform-origin: 0 0;
+            width: calc(100% / 1.2);
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3a3a3c;
+            border-radius: 10px;
+        }
+
+        /* Glass card */
+        .glass {
+            background: rgba(28, 28, 30, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+        .glass-hover:hover {
+            border-color: rgba(139, 92, 246, 0.25);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.08);
+        }
+
+        /* Gradient border */
+        .gradient-border {
+            position: relative;
+            background: #1c1c1e;
+            border-radius: var(--radius);
+        }
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: calc(var(--radius) + 1px);
+            padding: 1px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #14b8a6, #6366f1);
+            background-size: 300% 300%;
+            animation: borderGlow 6s ease infinite;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        @keyframes borderGlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Reveal on scroll */
+        .reveal {
+            opacity: 0;
+            transform: translateY(22px);
+            transition: opacity 0.65s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Progress bar */
+        #progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            z-index: 100;
+            transition: width 0.1s linear;
+            border-radius: 0 2px 2px 0;
+        }
+
+        /* Floating TOC */
+        .toc-sidebar {
+            position: fixed;
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 50;
+            display: none;
+        }
+        @media (min-width: 1280px) {
+            .toc-sidebar { display: block; }
+        }
+        .toc-link {
+            display: block;
+            padding: 4px 0;
+            font-size: 13px;
+            color: #6e6e73;
+            transition: color 0.2s;
+            text-decoration: none;
+            position: relative;
+            padding-left: 14px;
+        }
+        .toc-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #3a3a3c;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .toc-link.active {
+            color: #a78bfa;
+        }
+        .toc-link.active::before {
+            background: #a78bfa;
+            transform: translateY(-50%) scale(1.4);
+        }
+
+        /* Image placeholder */
+        .img-placeholder {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 140px;
+            color: #6e6e73;
+            transition: all 0.3s;
+        }
+        .img-placeholder:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+            background: rgba(99, 102, 241, 0.04);
+        }
+
+        /* Roadmap timeline */
+        .roadmap-timeline {
+            position: relative;
+            padding-left: 32px;
+        }
+        .roadmap-timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #6366f1, #8b5cf6, transparent);
+            border-radius: 2px;
+        }
+        .roadmap-item {
+            position: relative;
+            margin-bottom: 28px;
+        }
+        .roadmap-item::before {
+            content: '';
+            position: absolute;
+            left: -28px;
+            top: 6px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #6366f1;
+            border: 2px solid #121214;
+            z-index: 2;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal { transition: none; opacity: 1; transform: none; }
+            * { animation-duration: 0.01ms !important; }
+        }
+    </style>
+</head>
+<body class="bg-[#08080a] text-[#e8e8ed] font-sans antialiased">
+
+    <!-- Reading Progress Bar -->
+    <div id="progress-bar"></div>
+
+    <!-- Floating Table of Contents (desktop) -->
+    <nav class="toc-sidebar" aria-label="Table of Contents">
+        <div class="glass p-4 rounded-2xl shadow-2xl" style="min-width: 160px;">
+            <p class="text-xs font-semibold text-[#98989d] mb-3 tracking-widest uppercase">On this page</p>
+            <a href="#overview" class="toc-link">Overview</a>
+            <a href="#problem" class="toc-link">Problem</a>
+            <a href="#solution" class="toc-link">Solution</a>
+            <a href="#roles" class="toc-link">User Roles</a>
+            <a href="#features" class="toc-link">Features</a>
+            <a href="#engineering" class="toc-link">Engineering</a>
+            <a href="#architecture" class="toc-link">Architecture</a>
+            <a href="#tech-stack" class="toc-link">Tech Stack</a>
+            <a href="#challenges" class="toc-link">Challenges</a>
+            <a href="#learnings" class="toc-link">Learnings</a>
+            <a href="#roadmap" class="toc-link">Future</a>
+            <a href="#gallery" class="toc-link">Gallery</a>
+            <a href="#reflection" class="toc-link">Reflection</a>
+        </div>
+    </nav>
+
+    <!-- Sticky Navigation -->
+    <nav class="sticky top-0 z-40 bg-[#08080a]/80 backdrop-blur-2xl border-b border-white/[0.06]" aria-label="Project navigation">
+        <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10 flex items-center justify-between h-14">
+            <a href="../portfolio.html" class="text-sm font-medium text-[#98989d] hover:text-white transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Back to Portfolio
+            </a>
+            <div class="flex items-center gap-3">
+                <a href="http://hospitalmanagement.xyz/" class="px-4 py-2 rounded-full bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs font-medium hover:bg-indigo-600/30 transition-all">Live Demo</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-20 pb-16 sm:pt-28 sm:pb-24 overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none select-none">
+            <div class="absolute top-1/4 left-1/4 w-72 h-72 bg-indigo-500/6 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-1/3 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+        </div>
+        <div class="relative max-w-4xl mx-auto px-5 sm:px-8 text-center">
+            <!-- Hero Image Placeholder -->
+            <div class="reveal mx-auto mb-10 max-w-2xl gradient-border overflow-hidden rounded-2xl">
+                <div class="img-placeholder h-64 sm:h-80 flex flex-col items-center justify-center bg-white/[0.01]">
+                    <svg class="w-12 h-12 text-[#3a3a3c] mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    <p class="text-sm text-[#6e6e73] font-mono">Hero Screenshot</p>
+                </div>
+            </div>
+            <h1 class="reveal reveal-delay-1 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white mb-4">Hospital Management System</h1>
+            <p class="reveal reveal-delay-2 text-xl sm:text-2xl text-[#98989d] font-medium mb-6">Healthcare Platform • Role-Based Management System • Backend Engineering</p>
+            <p class="reveal reveal-delay-3 text-[#a1a1a6] max-w-xl mx-auto text-[15px] leading-relaxed mb-8">A comprehensive role-based healthcare management platform designed to streamline hospital operations, patient care, and administrative workflows.</p>
+            <div class="reveal reveal-delay-4 flex flex-wrap justify-center gap-2 mb-8">
+                <span class="px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 text-xs font-medium border border-indigo-500/20">Python</span>
+                <span class="px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-medium border border-purple-500/20">Django</span>
+                <span class="px-3 py-1.5 rounded-lg bg-teal-500/10 text-teal-400 text-xs font-medium border border-teal-500/20">DRF</span>
+                <span class="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20">PostgreSQL</span>
+                <span class="px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-400 text-xs font-medium border border-rose-500/20">Redis</span>
+                <span class="px-3 py-1.5 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-medium border border-sky-500/20">Celery</span>
+                <span class="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/20">JWT Auth</span>
+                <span class="px-3 py-1.5 rounded-lg bg-pink-500/10 text-pink-400 text-xs font-medium border border-pink-500/20">Bootstrap</span>
+            </div>
+            <div class="reveal reveal-delay-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/8 border border-emerald-500/20 text-emerald-400 text-sm">
+                <span class="relative flex h-2 w-2"><span class="inline-flex rounded-full h-2 w-2 bg-emerald-400"></span></span>
+                Completed
+            </div>
+        </div>
+    </section>
+
+    <!-- Project Overview -->
+    <section id="overview" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Overview</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">A Unified Healthcare Platform</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="reveal reveal-delay-1 space-y-4 text-[#a1a1a6] leading-relaxed text-[15px]">
+                <p>The Hospital Management System was built to digitize and simplify hospital workflows by connecting patients, doctors, pharmacists, receptionists, laboratory staff, accountants, and administrators within one secure platform. It centralizes healthcare operations while maintaining strict role separation and secure access to sensitive patient information.</p>
+                <p>Many healthcare facilities still rely on fragmented systems or manual record keeping, making communication and patient management inefficient. This project replaces those silos with a cohesive backend system that orchestrates complex medical workflows — from appointment scheduling to prescription fulfillment — under a unified architecture.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Problem -->
+    <section id="problem" class="py-20 sm:py-28">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">The Problem</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Fragmented Hospital Operations</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5">
+                <div class="reveal reveal-delay-1 glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Manual Patient Records</h3><p class="text-[#98989d] text-[13px]">Paper files and disjointed digital records lead to errors, delays, and incomplete histories.</p></div>
+                <div class="reveal reveal-delay-2 glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Disconnected Departments</h3><p class="text-[#98989d] text-[13px]">Doctors, labs, pharmacies, and billing operate in silos, causing miscommunication and redundant work.</p></div>
+                <div class="reveal reveal-delay-1 glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Appointment Scheduling Conflicts</h3><p class="text-[#98989d] text-[13px]">Manual booking creates overlaps and long patient wait times.</p></div>
+                <div class="reveal reveal-delay-2 glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Prescription & Lab Workflow Delays</h3><p class="text-[#98989d] text-[13px]">Paper prescriptions and lab request forms slow down critical care pathways.</p></div>
+                <div class="reveal reveal-delay-1 glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Billing Inefficiencies</h3><p class="text-[#98989d] text-[13px]">Separate billing systems lead to errors and delayed payments.</p></div>
+                <div class="reveal reveal-delay-2 glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Security & Role Confusion</h3><p class="text-[#98989d] text-[13px]">Without proper access controls, sensitive data is exposed, and staff boundaries blur.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Solution -->
+    <section id="solution" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">The Solution</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Centralized, Role-Based Platform</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5">
+                <div class="reveal reveal-delay-1 glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Centralized Patient Records</h3><p class="text-[#98989d] text-[13px]">A single source of truth for patient demographics, history, visits, and treatment plans.</p></div>
+                <div class="reveal reveal-delay-2 glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Smart Appointment Scheduling</h3><p class="text-[#98989d] text-[13px]">Conflict detection, doctor availability, and automated reminders reduce no-shows.</p></div>
+                <div class="reveal reveal-delay-1 glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Prescription Workflow</h3><p class="text-[#98989d] text-[13px]">Digital prescriptions flow directly from doctor to pharmacist, with validation and audit trails.</p></div>
+                <div class="reveal reveal-delay-2 glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Laboratory Request Management</h3><p class="text-[#98989d] text-[13px]">Lab orders are linked to patient records, results uploaded securely, and doctors notified.</p></div>
+                <div class="reveal reveal-delay-1 glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Integrated Billing</h3><p class="text-[#98989d] text-[13px]">Charges generated from services and medications, with payment tracking and receipt generation.</p></div>
+                <div class="reveal reveal-delay-2 glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Role-Based Dashboards</h3><p class="text-[#98989d] text-[13px]">Each user role sees only relevant modules, data, and actions — enforced by backend permissions.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- User Roles -->
+    <section id="roles" class="py-20 sm:py-28">
+        <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="text-center mb-14 reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">User Roles</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight">Role-Based Access</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
+            </div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <!-- Role cards -->
+                <div class="reveal glass p-5 text-center">
+                    <div class="img-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Admin Dashboard</span></div>
+                    <h4 class="text-sm font-semibold text-white">Administrator</h4>
+                    <p class="text-[#86868b] text-xs mt-1">Full system control, user management, configuration, and audit logs.</p>
+                </div>
+                <div class="reveal glass p-5 text-center">
+                    <div class="img-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Doctor Dashboard</span></div>
+                    <h4 class="text-sm font-semibold text-white">Doctor</h4>
+                    <p class="text-[#86868b] text-xs mt-1">Patient consultations, prescriptions, lab requests, and medical history.</p>
+                </div>
+                <div class="reveal glass p-5 text-center">
+                    <div class="img-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Patient Dashboard</span></div>
+                    <h4 class="text-sm font-semibold text-white">Patient</h4>
+                    <p class="text-[#86868b] text-xs mt-1">Appointment booking, prescription viewing, lab results, and billing.</p>
+                </div>
+                <div class="reveal glass p-5 text-center">
+                    <div class="img-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Reception Dashboard</span></div>
+                    <h4 class="text-sm font-semibold text-white">Receptionist</h4>
+                    <p class="text-[#86868b] text-xs mt-1">Patient registration, appointment scheduling, and front-desk workflows.</p>
+                </div>
+                <div class="reveal glass p-5 text-center">
+                    <div class="img-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Pharmacy Dashboard</span></div>
+                    <h4 class="text-sm font-semibold text-white">Pharmacist</h4>
+                    <p class="text-[#86868b] text-xs mt-1">Prescription fulfillment, inventory management, and dispensing records.</p>
+                </div>
+                <div class="reveal glass p-5 text-center">
+                    <div class="img-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Lab Dashboard</span></div>
+                    <h4 class="text-sm font-semibold text-white">Laboratory Staff</h4>
+                    <p class="text-[#86868b] text-xs mt-1">Receive lab orders, upload results, and manage sample tracking.</p>
+                </div>
+                <div class="reveal glass p-5 text-center">
+                    <div class="img-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Billing Dashboard</span></div>
+                    <h4 class="text-sm font-semibold text-white">Accountant</h4>
+                    <p class="text-[#86868b] text-xs mt-1">Generate invoices, track payments, and manage financial reports.</p>
+                </div>
+                <div class="reveal glass p-5 text-center">
+                    <div class="img-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Nurse Dashboard</span></div>
+                    <h4 class="text-sm font-semibold text-white">Nurse</h4>
+                    <p class="text-[#86868b] text-xs mt-1">Assist doctors, record vitals, and manage ward activities.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature Showcase -->
+    <section id="features" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="text-center mb-14 reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Features</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight">Core Capabilities</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
+            </div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div class="reveal glass overflow-hidden"><div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Patient Registration</span></div><div class="p-4"><h3 class="text-sm font-semibold text-white">Patient Registration</h3><p class="text-[#86868b] text-xs mt-1">Capture demographics, insurance info, and medical history with validation.</p></div></div>
+                <div class="reveal glass overflow-hidden"><div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Medical Records</span></div><div class="p-4"><h3 class="text-sm font-semibold text-white">Medical Records</h3><p class="text-[#86868b] text-xs mt-1">Comprehensive patient history including visits, diagnoses, and attachments.</p></div></div>
+                <div class="reveal glass overflow-hidden"><div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Prescription Management</span></div><div class="p-4"><h3 class="text-sm font-semibold text-white">Prescription Management</h3><p class="text-[#86868b] text-xs mt-1">Digital prescriptions with drug interaction checks and pharmacy workflow.</p></div></div>
+                <div class="reveal glass overflow-hidden"><div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Laboratory Requests</span></div><div class="p-4"><h3 class="text-sm font-semibold text-white">Laboratory Requests</h3><p class="text-[#86868b] text-xs mt-1">Order tests, track samples, and upload results linked to patient records.</p></div></div>
+                <div class="reveal glass overflow-hidden"><div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Billing & Invoicing</span></div><div class="p-4"><h3 class="text-sm font-semibold text-white">Billing & Invoicing</h3><p class="text-[#86868b] text-xs mt-1">Automated charge calculation, payment tracking, and printable receipts.</p></div></div>
+                <div class="reveal glass overflow-hidden"><div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Authentication & Profiles</span></div><div class="p-4"><h3 class="text-sm font-semibold text-white">Authentication & Profiles</h3><p class="text-[#86868b] text-xs mt-1">Secure JWT-based login with role assignment and profile management.</p></div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Engineering -->
+    <section id="engineering" class="py-20 sm:py-28">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Engineering</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Architecture & Design</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="space-y-12">
+                <div class="reveal"><h3 class="text-xl font-semibold text-white mb-4">Role-Based Access Control</h3><p class="text-[#a1a1a6] text-[14px] leading-relaxed">Permissions are enforced at the model and view level using Django's permission system extended with custom roles. Each endpoint verifies the user's role before allowing access to patient data, prescriptions, or billing records. This ensures data isolation and compliance with healthcare privacy principles.</p></div>
+                <div class="reveal"><h3 class="text-xl font-semibold text-white mb-4">Authentication & Authorization</h3><p class="text-[#a1a1a6] text-[14px] leading-relaxed">JSON Web Tokens (JWT) handle stateless authentication across the REST API. Refresh tokens allow seamless session extension. Authorization checks are layered: first at the middleware level (is the user authenticated?), then at the view level (does the role permit this action?).</p></div>
+                <div class="reveal"><h3 class="text-xl font-semibold text-white mb-4">Database Normalization</h3><p class="text-[#a1a1a6] text-[14px] leading-relaxed">The schema is normalized to avoid redundancy: patients, doctors, appointments, prescriptions, lab results, and billing are separate but linked through foreign keys. This allows independent modification of each domain while maintaining referential integrity.</p></div>
+                <div class="reveal"><h3 class="text-xl font-semibold text-white mb-4">REST APIs & Service Layer</h3><p class="text-[#a1a1a6] text-[14px] leading-relaxed">Django REST Framework provides a clean API layer. Business logic is encapsulated in a service layer rather than views, keeping endpoints thin and promoting reusability. For example, the appointment booking service checks doctor availability, patient conflicts, and schedules — all within a single atomic transaction.</p></div>
+                <div class="reveal"><h3 class="text-xl font-semibold text-white mb-4">Workflow Management</h3><p class="text-[#a1a1a6] text-[14px] leading-relaxed">Complex multi-step processes (e.g., doctor creates prescription → pharmacist dispenses → billing generates invoice) are modeled as state machines. Status fields track progress, and Celery tasks handle asynchronous actions like email notifications or report generation.</p></div>
+                <div class="reveal"><h3 class="text-xl font-semibold text-white mb-4">Security & Validation</h3><p class="text-[#a1a1a6] text-[14px] leading-relaxed">Input validation is performed at multiple levels: serializer validation, model constraints, and database-level checks. Sensitive data (passwords, tokens) are hashed. Audit logging records critical actions for traceability. Cross-role data exposure is prevented by filtering querysets based on user role.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- System Architecture -->
+    <section id="architecture" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-5xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="text-center mb-14 reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Architecture</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight">System Design</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5">
+                <div class="reveal glass p-6 text-center"><div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Database ERD</span></div><p class="text-[#86868b] text-xs">Entity relationships across patients, staff, and workflows</p></div>
+                <div class="reveal glass p-6 text-center"><div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Authentication Flow</span></div><p class="text-[#86868b] text-xs">JWT issuance, role verification, and session management</p></div>
+                <div class="reveal glass p-6 text-center"><div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Patient Workflow</span></div><p class="text-[#86868b] text-xs">Registration → appointment → consultation → billing</p></div>
+                <div class="reveal glass p-6 text-center"><div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Prescription Workflow</span></div><p class="text-[#86868b] text-xs">Doctor → pharmacist → dispensing → billing integration</p></div>
+                <div class="reveal glass p-6 text-center"><div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Laboratory Workflow</span></div><p class="text-[#86868b] text-xs">Order → sample collection → result upload → doctor notification</p></div>
+                <div class="reveal glass p-6 text-center"><div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">API Structure</span></div><p class="text-[#86868b] text-xs">REST endpoints organized by domain and role</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technology Stack -->
+    <section id="tech-stack" class="py-20 sm:py-28">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Tech Stack</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Technology Choices</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5">
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Backend</h3><p class="text-[#a1a1a6] text-[13px]">Django & DRF for rapid development with built-in admin, ORM, and authentication. Celery for async tasks like report generation. Redis as message broker.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Frontend</h3><p class="text-[#a1a1a6] text-[13px]">Bootstrap for responsive UI components, HTML/CSS/JavaScript for interactivity. The frontend consumes REST APIs with role-based views.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Database</h3><p class="text-[#a1a1a6] text-[13px]">PostgreSQL for relational integrity, complex queries, and transactional workflows. Indexed for performance on high-traffic tables.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Security</h3><p class="text-[#a1a1a6] text-[13px]">JWT tokens with refresh rotation, password hashing, CSRF protection, and role-based permission classes. Audit logs for sensitive actions.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Infrastructure</h3><p class="text-[#a1a1a6] text-[13px]">Docker containerization for consistent development and deployment. Nginx + Gunicorn for serving the application.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Developer Tools</h3><p class="text-[#a1a1a6] text-[13px]">Git for version control, pytest for testing, Swagger for API documentation, and Django Debug Toolbar for profiling.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Challenges -->
+    <section id="challenges" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Challenges</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Engineering Hurdles</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="space-y-6">
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Managing Multiple User Roles</h3><p class="text-[#a1a1a6] text-[13px] mt-2">Designing a permission system that is both granular and maintainable required careful abstraction. I used Django's built-in groups and permissions augmented with custom checks to avoid repetitive conditionals in views.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Keeping Permissions Secure</h3><p class="text-[#a1a1a6] text-[13px] mt-2">Every API endpoint was audited for role bypass vulnerabilities. The service layer enforces ownership checks so a patient can only view their own records, even if they guess a URL.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Handling Medical Workflows</h3><p class="text-[#a1a1a6] text-[13px] mt-2">Prescription and lab workflows span multiple roles. I modeled these as stateful processes with clear status transitions, ensuring that actions occur only in valid states.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Maintaining Clean Architecture</h3><p class="text-[#a1a1a6] text-[13px] mt-2">As features grew, the codebase risked becoming unwieldy. I applied service-layer pattern and kept views thin, which made the system easier to test and extend.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What I Learned -->
+    <section id="learnings" class="py-20 sm:py-28">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Learnings</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Growth as an Engineer</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5 text-[#a1a1a6] text-[14px]">
+                <div class="reveal glass p-5">Building a large-scale Django application taught me to think in terms of reusable apps and domain boundaries.</div>
+                <div class="reveal glass p-5">Designing role-based systems forced me to deeply understand authentication and authorization patterns beyond basic tutorials.</div>
+                <div class="reveal glass p-5">API development with DRF sharpened my skills in serialization, pagination, filtering, and documentation.</div>
+                <div class="reveal glass p-5">Database design for healthcare workflows reinforced the importance of normalization while still considering query performance.</div>
+                <div class="reveal glass p-5">Workflow automation with Celery and state machines gave me hands-on experience with asynchronous processing in web apps.</div>
+                <div class="reveal glass p-5">This project cemented that maintainability is a feature — writing clear, well-structured code pays off as complexity grows.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Future Improvements -->
+    <section id="roadmap" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Future</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Potential Enhancements</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="roadmap-timeline">
+                <div class="roadmap-item reveal"><h4 class="text-sm font-semibold text-white">EHR Integration</h4><p class="text-[#98989d] text-xs">Connect with existing Electronic Health Record systems for wider adoption.</p></div>
+                <div class="roadmap-item reveal"><h4 class="text-sm font-semibold text-white">SMS & Email Reminders</h4><p class="text-[#98989d] text-xs">Automated notifications for appointments, prescriptions, and lab results.</p></div>
+                <div class="roadmap-item reveal"><h4 class="text-sm font-semibold text-white">Video Consultations</h4><p class="text-[#98989d] text-xs">Integrated telemedicine feature for remote doctor-patient interactions.</p></div>
+                <div class="roadmap-item reveal"><h4 class="text-sm font-semibold text-white">Insurance Integration</h4><p class="text-[#98989d] text-xs">Direct billing to insurers with claim submission and verification.</p></div>
+                <div class="roadmap-item reveal"><h4 class="text-sm font-semibold text-white">Analytics Dashboard</h4><p class="text-[#98989d] text-xs">Advanced data visualization for hospital management and decision support.</p></div>
+                <div class="roadmap-item reveal"><h4 class="text-sm font-semibold text-white">Mobile Application</h4><p class="text-[#98989d] text-xs">React Native app for patients and staff to access the system on the go.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshot Gallery -->
+    <section id="gallery" class="py-20 sm:py-28">
+        <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="text-center mb-14 reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Gallery</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight">Screenshots</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Patient Dashboard</span></div>
+                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Doctor Dashboard</span></div>
+                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Reception Dashboard</span></div>
+                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Pharmacy Dashboard</span></div>
+                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Laboratory Dashboard</span></div>
+                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Billing Dashboard</span></div>
+                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Admin Dashboard</span></div>
+                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Medical Record View</span></div>
+                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Reports</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final Reflection -->
+    <section id="reflection" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-3xl mx-auto px-5 sm:px-8 lg:px-10 text-center">
+            <div class="reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Reflection</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-8">Building for Real-World Impact</h2>
+            </div>
+            <div class="reveal reveal-delay-1 space-y-5 text-[#a1a1a6] leading-relaxed text-[15px]">
+                <p>This Hospital Management System demonstrates my ability to build enterprise-grade software involving multiple stakeholders, complex workflows, secure authentication, and a maintainable backend architecture. It was designed not as a theoretical exercise, but as a practical solution to genuine operational challenges in healthcare environments.</p>
+                <p>Developing this system deepened my understanding of designing for organizations where reliability, security, and scalability are non-negotiable. The experience reinforced that great software engineering is about making complex systems feel simple to the people who use them every day.</p>
+                <p class="text-white font-medium">I'm passionate about building backend systems that solve meaningful real‑world problems while maintaining clean architecture and an excellent user experience.</p>
+            </div>
+            <div class="reveal reveal-delay-2 mt-10">
+                <div class="flex items-center justify-center gap-4">
+                    <a href="../projects/pointpulse.html" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.06] border border-white/[0.1] text-sm font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        Previous Project
+                    </a>
+
+                    <!-- Back to Portfolio -->
+                    <a href="../portfolio.html" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.06] border border-white/[0.1] text-sm font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">
+                        
+                        Back to Portfolio
+                    </a>
+
+                    <!-- Next Project (adjust href to your actual next case study) -->
+                    <a href="../projects/logbook.html" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.06] border border-white/[0.1] text-sm font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">
+                        Next Project
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+                </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-8 border-t border-white/[0.05] text-center text-[#6e6e73] text-xs">
+        <p>Hospital Management System — Built by Rhunor A. &copy; <span id="current-year"></span></p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+
+            // Progress bar
+            const progressBar = document.getElementById('progress-bar');
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const progress = (scrollTop / docHeight) * 100;
+                progressBar.style.width = progress + '%';
+            });
+
+            // Reveal on scroll
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+            reveals.forEach(el => observer.observe(el));
+
+            // Floating TOC active state
+            const tocLinks = document.querySelectorAll('.toc-link');
+            const sections = document.querySelectorAll('section[id]');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 120;
+                    if (window.scrollY >= sectionTop) current = section.getAttribute('id');
+                });
+                tocLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) link.classList.add('active');
+                });
+            });
+            tocLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) window.scrollTo({ top: target.offsetTop - 80, behavior: 'smooth' });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

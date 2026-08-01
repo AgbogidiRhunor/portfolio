@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PointPulse — Case Study | Rhunor A</title>
+    <meta name="description" content="Engineering case study: PointPulse — a configurable tournament management platform for table tennis. Backend architecture, tournament engine, mobile app.">
+    <meta property="og:title" content="PointPulse — Tournament Management Platform">
+    <meta property="og:description" content="Backend architecture, React Native, FastAPI, PostgreSQL. A modern solution for competitive table tennis.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="YOUR_PROJECT_URL">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PointPulse — Case Study">
+    <meta name="twitter:description" content="Engineering case study: configurable tournament engine, real‑time scoring, mobile app.">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['SF Pro Display', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['SF Mono', 'JetBrains Mono', 'Fira Code', 'ui-monospace', 'monospace'],
+                    },
+                    animation: {
+                        'float': 'float 8s ease-in-out infinite',
+                        'pulse-soft': 'pulseSoft 4s ease-in-out infinite',
+                        'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards',
+                        'slide-in-right': 'slideInRight 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) forwards',
+                        'shimmer': 'shimmer 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-12px)' },
+                        },
+                        pulseSoft: {
+                            '0%, 100%': { opacity: '0.7', transform: 'scale(1)' },
+                            '50%': { opacity: '1', transform: 'scale(1.03)' },
+                        },
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideInRight: {
+                            '0%': { opacity: '0', transform: 'translateX(16px)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-200% 0' },
+                            '100%': { backgroundPosition: '200% 0' },
+                        },
+                    },
+                },
+            },
+        };
+    </script>
+
+    <style>
+        :root {
+            --bg: #08080a;
+            --surface: #121214;
+            --card: #1c1c1e;
+            --border: rgba(255, 255, 255, 0.06);
+            --text: #e8e8ed;
+            --text-secondary: #98989d;
+            --accent: #6366f1;
+            --accent-purple: #8b5cf6;
+            --accent-teal: #14b8a6;
+            --radius: 18px;
+        }
+
+        /* REMOVED transform from body - it was breaking the sticky nav */
+        body {
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            letter-spacing: -0.01em;
+        }
+
+        /* Applied transform to a wrapper instead */
+        .page-wrapper {
+            transform: scale(1.2);
+            transform-origin: 0 0;
+            width: calc(100% / 1.2);
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3a3a3c;
+            border-radius: 10px;
+        }
+
+        /* Glass card */
+        .glass {
+            background: rgba(28, 28, 30, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        .glass-hover:hover {
+            border-color: rgba(139, 92, 246, 0.25);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.08);
+        }
+
+        /* Gradient border card */
+        .gradient-border {
+            position: relative;
+            background: #1c1c1e;
+            border-radius: var(--radius);
+        }
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: calc(var(--radius) + 1px);
+            padding: 1px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #14b8a6, #6366f1);
+            background-size: 300% 300%;
+            animation: borderGlow 6s ease infinite;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        @keyframes borderGlow {
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        /* Reveal on scroll */
+        .reveal {
+            opacity: 0;
+            transform: translateY(22px);
+            transition: opacity 0.65s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Progress bar */
+        #progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            z-index: 100;
+            transition: width 0.1s linear;
+            border-radius: 0 2px 2px 0;
+        }
+
+        /* Floating TOC */
+        .toc-sidebar {
+            position: fixed;
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 50;
+            display: none;
+        }
+        @media (min-width: 1280px) {
+            .toc-sidebar {
+                display: block;
+            }
+        }
+        .toc-link {
+            display: block;
+            padding: 4px 0;
+            font-size: 13px;
+            color: #6e6e73;
+            transition: color 0.2s;
+            text-decoration: none;
+            position: relative;
+            padding-left: 14px;
+        }
+        .toc-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #3a3a3c;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .toc-link.active {
+            color: #a78bfa;
+        }
+        .toc-link.active::before {
+            background: #a78bfa;
+            transform: translateY(-50%) scale(1.4);
+        }
+
+        /* Image placeholder */
+        .img-placeholder {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 180px;
+            color: #6e6e73;
+            transition: all 0.3s;
+        }
+        .img-placeholder:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+            background: rgba(99, 102, 241, 0.04);
+        }
+
+        /* Timeline for roadmap */
+        .roadmap-timeline {
+            position: relative;
+            padding-left: 32px;
+        }
+        .roadmap-timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #6366f1, #8b5cf6, transparent);
+            border-radius: 2px;
+        }
+        .roadmap-item {
+            position: relative;
+            margin-bottom: 28px;
+        }
+        .roadmap-item::before {
+            content: '';
+            position: absolute;
+            left: -28px;
+            top: 6px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #6366f1;
+            border: 2px solid #121214;
+            z-index: 2;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal {
+                transition: none;
+                opacity: 1;
+                transform: none;
+            }
+            * {
+                animation-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-[#08080a] text-[#e8e8ed] font-sans antialiased">
+
+    <!-- Reading Progress Bar -->
+    <div id="progress-bar"></div>
+
+    <!-- Floating Table of Contents (desktop) -->
+    <nav class="toc-sidebar" aria-label="Table of Contents">
+        <div class="glass p-4 rounded-2xl shadow-2xl" style="min-width: 160px;">
+            <p class="text-xs font-semibold text-[#98989d] mb-3 tracking-widest uppercase">On this page</p>
+            <a href="#overview" class="toc-link">Overview</a>
+            <a href="#problem" class="toc-link">Problem</a>
+            <a href="#solution" class="toc-link">Solution</a>
+            <a href="#features" class="toc-link">Features</a>
+            <a href="#engineering" class="toc-link">Engineering</a>
+            <a href="#architecture" class="toc-link">Architecture</a>
+            <a href="#tech-stack" class="toc-link">Tech Stack</a>
+            <a href="#challenges" class="toc-link">Challenges</a>
+            <a href="#learnings" class="toc-link">Learnings</a>
+            <a href="#roadmap" class="toc-link">Roadmap</a>
+            <a href="#gallery" class="toc-link">Gallery</a>
+            <a href="#reflection" class="toc-link">Reflection</a>
+        </div>
+    </nav>
+
+    <!-- Sticky Navigation - stays fixed because it's OUTSIDE the scaled wrapper -->
+    <nav class="sticky top-0 z-40 bg-[#08080a]/80 backdrop-blur-2xl border-b border-white/[0.06]" aria-label="Project navigation">
+        <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10 flex items-center justify-between h-14">
+            <a href="../portfolio.html" class="text-sm font-medium text-[#98989d] hover:text-white transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Back to Portfolio
+            </a>
+            <div class="flex items-center gap-3">
+                <a href="YOUR_DEMO" class="px-4 py-2 rounded-full bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs font-medium hover:bg-indigo-600/30 transition-all">Live Demo</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- WRAPPER: Everything inside here is scaled -->
+    <div class="page-wrapper">
+
+        <!-- Hero Section -->
+        <section class="relative pt-20 pb-16 sm:pt-28 sm:pb-24 overflow-hidden">
+            <div class="absolute inset-0 pointer-events-none select-none">
+                <div class="absolute top-1/4 left-1/4 w-72 h-72 bg-indigo-500/6 rounded-full blur-3xl"></div>
+                <div class="absolute bottom-1/3 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+            </div>
+            <div class="relative max-w-4xl mx-auto px-5 sm:px-8 text-center">
+                <!-- Hero Image Placeholder -->
+                <div class="reveal mx-auto mb-10 max-w-2xl gradient-border overflow-hidden rounded-2xl">
+                    <div class="img-placeholder h-64 sm:h-80 flex flex-col items-center justify-center bg-white/[0.01]">
+                        <svg class="w-12 h-12 text-[#3a3a3c] mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <p class="text-sm text-[#6e6e73] font-mono">Hero Screenshot</p>
+                    </div>
+                </div>
+                <h1 class="reveal reveal-delay-1 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white mb-4">PointPulse</h1>
+                <p class="reveal reveal-delay-2 text-xl sm:text-2xl text-[#98989d] font-medium mb-6">Backend Architecture • Tournament Engine • Mobile Application</p>
+                <p class="reveal reveal-delay-3 text-[#a1a1a6] max-w-xl mx-auto text-[15px] leading-relaxed mb-8">A modern tournament management platform built to simplify competitive table tennis through configurable tournament engines, real‑time scoring, and powerful analytics.</p>
+                <div class="reveal reveal-delay-4 flex flex-wrap justify-center gap-2 mb-8">
+                    <span class="px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 text-xs font-medium border border-indigo-500/20">React Native (Expo)</span>
+                    <span class="px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-medium border border-purple-500/20">FastAPI / DRF</span>
+                    <span class="px-3 py-1.5 rounded-lg bg-teal-500/10 text-teal-400 text-xs font-medium border border-teal-500/20">PostgreSQL</span>
+                    <span class="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20">Redis</span>
+                    <span class="px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-400 text-xs font-medium border border-rose-500/20">Celery</span>
+                    <span class="px-3 py-1.5 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-medium border border-sky-500/20">JWT Auth</span>
+                    <span class="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/20">RBAC</span>
+                </div>
+                <div class="reveal reveal-delay-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/8 border border-emerald-500/20 text-emerald-400 text-sm">
+                    <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span></span>
+                    Active Development
+                </div>
+            </div>
+        </section>
+
+        <!-- Project Overview -->
+        <section id="overview" class="py-20 sm:py-28 bg-white/[0.01]">
+            <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+                <div class="reveal">
+                    <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Overview</span>
+                    <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Why PointPulse Exists</h2>
+                    <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+                </div>
+                <div class="reveal reveal-delay-1 space-y-4 text-[#a1a1a6] leading-relaxed text-[15px]">
+                    <p>Table tennis tournaments, even at competitive levels, often rely on manual processes — paper brackets, spreadsheets, and disconnected messaging apps. Organizers spend hours managing registrations, tracking scores, and updating brackets by hand. Players have little visibility into match schedules or statistics, and spectators lack a central place to follow the action.</p>
+                    <p>PointPulse was created to change that. It's a configurable digital platform that centralizes the entire tournament lifecycle — from registration and scheduling to live scoring and historical analytics. The goal was not just to digitize existing workflows, but to build a flexible engine that can adapt to any tournament format without hardcoding rules.</p>
+                    <p>The platform serves organizers, clubs, players, referees, and spectators — each with tailored interfaces and role‑based access. Designed with a mobile‑first approach, PointPulse makes tournament management accessible anywhere, even with intermittent connectivity.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- The Problem -->
+        <section id="problem" class="py-20 sm:py-28">
+            <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+                <div class="reveal">
+                    <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">The Problem</span>
+                    <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Fragmented & Manual Processes</h2>
+                    <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+                </div>
+                <div class="grid sm:grid-cols-2 gap-5">
+                    <div class="reveal reveal-delay-1 glass p-5">
+                        <h3 class="text-sm font-semibold text-white mb-2">Manual Score Tracking</h3>
+                        <p class="text-[#98989d] text-[13px]">Scores recorded on paper or spreadsheets are error‑prone and slow to update for players and spectators.</p>
+                    </div>
+                    <div class="reveal reveal-delay-2 glass p-5">
+                        <h3 class="text-sm font-semibold text-white mb-2">Rigid Tournament Software</h3>
+                        <p class="text-[#98989d] text-[13px]">Existing solutions force specific formats and lack configurability for custom rules, brackets, or scoring systems.</p>
+                    </div>
+                    <div class="reveal reveal-delay-1 glass p-5">
+                        <h3 class="text-sm font-semibold text-white mb-2">Poor Player Statistics</h3>
+                        <p class="text-[#98989d] text-[13px]">Historical data is rarely captured, preventing performance tracking and meaningful analysis.</p>
+                    </div>
+                    <div class="reveal reveal-delay-2 glass p-5">
+                        <h3 class="text-sm font-semibold text-white mb-2">No Mobile‑First Experience</h3>
+                        <p class="text-[#98989d] text-[13px]">Most platforms are desktop‑only, limiting accessibility for on‑site participants and referees.</p>
+                    </div>
+                    <div class="reveal reveal-delay-1 glass p-5">
+                        <h3 class="text-sm font-semibold text-white mb-2">Limited Spectator Engagement</h3>
+                        <p class="text-[#98989d] text-[13px]">Friends and fans struggle to follow live brackets, scores, and match updates in real time.</p>
+                    </div>
+                    <div class="reveal reveal-delay-2 glass p-5">
+                        <h3 class="text-sm font-semibold text-white mb-2">Disconnected Tools</h3>
+                        <p class="text-[#98989d] text-[13px]">Organizers juggle registration forms, messaging apps, and spreadsheets, leading to inefficiency and errors.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- The Solution -->
+        <section id="solution" class="py-20 sm:py-28 bg-white/[0.01]">
+            <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+                <div class="reveal">
+                    <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">The Solution</span>
+                    <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">A Configurable Tournament Platform</h2>
+                    <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+                </div>
+                <div class="grid sm:grid-cols-2 gap-5">
+                    <div class="reveal reveal-delay-1 glass p-5">
+                        <h3 class="text-sm font-semibold text-white mb-2">Configurable Tournament Engine</h3>
+                        <p class="text-[#98989d] text-[13px]">Organizers define formats (round‑robin, knockout, groups), scoring rules, and progression logic — no hardcoding.</p>
+                    </div>
+                    <div class="reveal reveal-delay-2 glass p-5">
+                        <h3 class="text-sm font-semibold text-white mb-2">Real‑time Updates</h3>
+                        <p class="text-[#98989d] text-[13px]">Match scores, bracket changes, and notifications are pushed instantly to all stakeholders via the API and mobile app.</p>
+                    </div>
+                    <div class="reveal reveal-delay-1 glass p-5">
+                        <h3 class="text-sm font-semibold text-white mb-2">Role‑Based Access</h3>
+                        <p class="text-[#98989d] text-[13px]">Granular permissions for organizers, club admins, referees, players, and spectators ensure secure, contextual experiences.</p>
+                    </div>
+                    <div class="reveal reveal-delay-2 glass p-5">
+                        <h3 class="text-sm font-semibold text-white mb-2">Offline‑Capable Mobile App</h3>
+                        <p class="text-[#98989d] text-[13px]">React Native with local state allows referees to record scores even without connectivity, syncing later.</p>
+                    </div>
+                    <div class="reveal reveal-delay-1 glass p-5">
+                        <h3 class="text-sm font-semibold text-white mb-2">Player Statistics & Analytics</h3>
+                        <p class="text-[#98989d] text-[13px]">Historical performance data, win/loss ratios, and head‑to‑head comparisons are automatically generated.</p>
+                    </div>
+                    <div class="reveal reveal-delay-2 glass p-5">
+                        <h3 class="text-sm font-semibold text-white mb-2">Club & Tournament Templates</h3>
+                        <p class="text-[#98989d] text-[13px]">Recurring events and club structures can be saved as templates, dramatically reducing setup time.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Feature Showcase -->
+        <section id="features" class="py-20 sm:py-28">
+            <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10">
+                <div class="text-center mb-14 reveal">
+                    <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Features</span>
+                    <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight">Core Capabilities</h2>
+                    <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
+                </div>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <!-- Feature cards with placeholder images -->
+                    <div class="reveal reveal-delay-1 glass overflow-hidden">
+                        <div class="img-placeholder h-40 rounded-none rounded-t-xl"><svg class="w-8 h-8 text-[#3a3a3c] mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg><span class="text-xs">Player Registration</span></div>
+                        <div class="p-4"><h3 class="text-sm font-semibold text-white">Player Registration</h3><p class="text-[#86868b] text-xs mt-1">Seamless sign‑up with custom fields, division selection, and payment integration hooks.</p></div>
+                    </div>
+                    <div class="reveal reveal-delay-2 glass overflow-hidden">
+                        <div class="img-placeholder h-40 rounded-none rounded-t-xl"><svg class="w-8 h-8 text-[#3a3a3c] mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span class="text-xs">Tournament Dashboard</span></div>
+                        <div class="p-4"><h3 class="text-sm font-semibold text-white">Tournament Dashboard</h3><p class="text-[#86868b] text-xs mt-1">Central control panel for schedules, brackets, and live match progress.</p></div>
+                    </div>
+                    <div class="reveal reveal-delay-3 glass overflow-hidden">
+                        <div class="img-placeholder h-40 rounded-none rounded-t-xl"><svg class="w-8 h-8 text-[#3a3a3c] mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg><span class="text-xs">Match Scoring</span></div>
+                        <div class="p-4"><h3 class="text-sm font-semibold text-white">Match Scoring</h3><p class="text-[#86868b] text-xs mt-1">Real‑time point entry with automatic game tracking and winner determination.</p></div>
+                    </div>
+                    <div class="reveal reveal-delay-1 glass overflow-hidden">
+                        <div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Tournament Bracket</span></div>
+                        <div class="p-4"><h3 class="text-sm font-semibold text-white">Tournament Bracket</h3><p class="text-[#86868b] text-xs mt-1">Dynamic bracket visualization that updates as matches progress.</p></div>
+                    </div>
+                    <div class="reveal reveal-delay-2 glass overflow-hidden">
+                        <div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Statistics Dashboard</span></div>
+                        <div class="p-4"><h3 class="text-sm font-semibold text-white">Statistics Dashboard</h3><p class="text-[#86868b] text-xs mt-1">Player performance trends, head‑to‑head records, and tournament history.</p></div>
+                    </div>
+                    <div class="reveal reveal-delay-3 glass overflow-hidden">
+                        <div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Club Management</span></div>
+                        <div class="p-4"><h3 class="text-sm font-semibold text-white">Club Management</h3><p class="text-[#86868b] text-xs mt-1">Club admins manage members, host tournaments, and track club‑level stats.</p></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Engineering Section -->
+        <section id="engineering" class="py-20 sm:py-28 bg-white/[0.01]">
+            <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+                <div class="reveal mb-14">
+                    <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Engineering</span>
+                    <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Architecture & Decisions</h2>
+                    <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+                    <p class="text-[#a1a1a6] leading-relaxed">Every technical choice in PointPulse was driven by the need for flexibility, performance, and long‑term maintainability. Below are the key engineering areas and the reasoning behind them.</p>
+                </div>
+                <div class="space-y-14">
+                    <!-- Backend Architecture -->
+                    <div class="reveal">
+                        <h3 class="text-xl font-semibold text-white mb-4">Backend Architecture</h3>
+                        <p class="text-[#a1a1a6] text-[14px] leading-relaxed mb-4">The backend is organized around domain‑driven design principles, with clear separation between tournament logic, user management, and statistics. The core is a <strong class="text-white">configurable tournament engine</strong> that treats rules as data, not code. This allows organizers to create custom formats without developer intervention.</p>
+                        <div class="glass p-4 font-mono text-xs text-indigo-300 overflow-x-auto">
+                            <span class="text-[#86868b]"># Example: Tournament format configuration</span><br>
+                            <span class="text-purple-400">format</span>: <span class="text-emerald-300">"round_robin_groups"</span><br>
+                            <span class="text-purple-400">groups</span>: <span class="text-amber-300">4</span><br>
+                            <span class="text-purple-400">advancement</span>: <span class="text-emerald-300">"top_2_per_group"</span><br>
+                            <span class="text-purple-400">knockout_stage</span>: <span class="text-amber-300">true</span>
+                        </div>
+                    </div>
+                    <!-- REST API & Auth -->
+                    <div class="reveal">
+                        <h3 class="text-xl font-semibold text-white mb-4">REST API & Authentication</h3>
+                        <p class="text-[#a1a1a6] text-[14px] leading-relaxed">The API follows RESTful conventions with versioned endpoints. JWT‑based authentication secures all routes, while role‑based access control (RBAC) enforces fine‑grained permissions — organizers, referees, players, and spectators each see only what they need. Refresh tokens and secure HTTP‑only cookies are used for mobile sessions.</p>
+                    </div>
+                    <!-- Database & Caching -->
+                    <div class="reveal">
+                        <h3 class="text-xl font-semibold text-white mb-4">Database & Caching</h3>
+                        <p class="text-[#a1a1a6] text-[14px] leading-relaxed">PostgreSQL handles relational data with a carefully normalized schema — players, tournaments, matches, scores, and clubs. Redis serves as a caching layer for frequently accessed tournament state and as a message broker for Celery background tasks (e.g., generating statistics, sending notifications).</p>
+                    </div>
+                    <!-- Tournament & Match Engine -->
+                    <div class="reveal">
+                        <h3 class="text-xl font-semibold text-white mb-4">Tournament & Match Engine</h3>
+                        <p class="text-[#a1a1a6] text-[14px] leading-relaxed">The tournament engine models formats as composable building blocks: group stages, knockout rounds, and consolation brackets can be combined arbitrarily. The match engine enforces scoring rules, tracks game progression, and automatically advances winners. State transitions are managed through a finite state machine to prevent invalid operations.</p>
+                    </div>
+                    <!-- Background Tasks & Scalability -->
+                    <div class="reveal">
+                        <h3 class="text-xl font-semibold text-white mb-4">Background Tasks & Scalability</h3>
+                        <p class="text-[#a1a1a6] text-[14px] leading-relaxed">Celery workers handle resource‑intensive operations like bracket generation, statistics aggregation, and email notifications. The architecture is designed to scale horizontally — stateless API servers behind a load balancer, with separate workers for async tasks. While still in active development, the foundation supports future growth.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- System Architecture Placeholders -->
+        <section id="architecture" class="py-20 sm:py-28">
+            <div class="max-w-5xl mx-auto px-5 sm:px-8 lg:px-10">
+                <div class="text-center mb-14 reveal">
+                    <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Architecture</span>
+                    <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight">System Design</h2>
+                    <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
+                </div>
+                <div class="grid sm:grid-cols-2 gap-5">
+                    <div class="reveal reveal-delay-1 glass p-6 text-center">
+                        <div class="img-placeholder h-48 mb-4 rounded-lg"><svg class="w-10 h-10 text-[#3a3a3c] mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span class="text-sm">Application Architecture Diagram</span></div>
+                        <p class="text-[#86868b] text-xs">High‑level system components and data flow</p>
+                    </div>
+                    <div class="reveal reveal-delay-2 glass p-6 text-center">
+                        <div class="img-placeholder h-48 mb-4 rounded-lg"><svg class="w-10 h-10 text-[#3a3a3c] mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4"/></svg><span class="text-sm">Database ERD</span></div>
+                        <p class="text-[#86868b] text-xs">Entity relationships and schema design</p>
+                    </div>
+                    <div class="reveal reveal-delay-1 glass p-6 text-center">
+                        <div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Authentication Flow</span></div>
+                        <p class="text-[#86868b] text-xs">JWT issuance, refresh, and role verification</p>
+                    </div>
+                    <div class="reveal reveal-delay-2 glass p-6 text-center">
+                        <div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Tournament Engine Flow</span></div>
+                        <p class="text-[#86868b] text-xs">State transitions and bracket generation logic</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technology Stack -->
+        <section id="tech-stack" class="py-20 sm:py-28 bg-white/[0.01]">
+            <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+                <div class="reveal mb-14">
+                    <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Tech Stack</span>
+                    <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Technology Choices</h2>
+                    <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+                </div>
+                <div class="space-y-10">
+                    <div class="reveal glass p-6">
+                        <h3 class="text-sm font-semibold text-white mb-3">Frontend — React Native (Expo)</h3>
+                        <p class="text-[#a1a1a6] text-[13px]">Chosen for cross‑platform mobile delivery with a single codebase. Expo accelerates development while allowing native modules when needed. The app uses React Navigation and context‑based state management for offline resilience.</p>
+                    </div>
+                    <div class="reveal glass p-6">
+                        <h3 class="text-sm font-semibold text-white mb-3">Backend — FastAPI & Django REST Framework</h3>
+                        <p class="text-[#a1a1a6] text-[13px]">The primary API is built with FastAPI for high performance and automatic OpenAPI docs. Django and DRF power the admin interface and complex relational logic, leveraging Django's mature ORM and authentication system.</p>
+                    </div>
+                    <div class="reveal glass p-6">
+                        <h3 class="text-sm font-semibold text-white mb-3">Database — PostgreSQL & Redis</h3>
+                        <p class="text-[#a1a1a6] text-[13px]">PostgreSQL ensures data integrity with foreign keys, constraints, and advanced querying. Redis handles caching of tournament brackets and session data, significantly reducing database load during live events.</p>
+                    </div>
+                    <div class="reveal glass p-6">
+                        <h3 class="text-sm font-semibold text-white mb-3">Infrastructure — Docker, AWS EC2, Nginx</h3>
+                        <p class="text-[#a1a1a6] text-[13px]">Containerized services simplify deployment and scaling. Gunicorn + Uvicorn serve the FastAPI app behind Nginx as a reverse proxy. Celery workers run as separate containers for background processing.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Challenges -->
+        <section id="challenges" class="py-20 sm:py-28">
+            <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+                <div class="reveal mb-14">
+                    <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Challenges</span>
+                    <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Solving Hard Problems</h2>
+                    <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+                </div>
+                <div class="space-y-8">
+                    <div class="reveal glass p-5">
+                        <h3 class="text-sm font-semibold text-white">Designing a Configurable Tournament Engine</h3>
+                        <p class="text-[#a1a1a6] text-[13px] mt-2">The biggest challenge was avoiding hardcoded tournament logic. I modeled formats as composable building blocks — group phases, knockout rounds, and seeding rules — that can be mixed arbitrarily. This required a flexible database schema and careful state management to ensure valid transitions.</p>
+                    </div>
+                    <div class="reveal glass p-5">
+                        <h3 class="text-sm font-semibold text-white">Supporting Multiple Tournament Formats</h3>
+                        <p class="text-[#a1a1a6] text-[13px] mt-2">From single elimination to round‑robin with playoffs, each format has unique progression rules. I built a rule engine that interprets configuration objects rather than branching with conditionals, making the system extensible without code changes.</p>
+                    </div>
+                    <div class="reveal glass p-5">
+                        <h3 class="text-sm font-semibold text-white">Balancing Flexibility with Simplicity</h3>
+                        <p class="text-[#a1a1a6] text-[13px] mt-2">Making everything configurable risks overwhelming users. I designed sensible defaults and progressive disclosure — basic tournaments need minimal setup, while advanced options remain available for power users.</p>
+                    </div>
+                    <div class="reveal glass p-5">
+                        <h3 class="text-sm font-semibold text-white">Managing Tournament State Transitions</h3>
+                        <p class="text-[#a1a1a6] text-[13px] mt-2">A match can be scheduled, in‑progress, completed, or disputed. Ensuring that only valid transitions occur — and that all dependent data updates atomically — required a finite state machine implementation with database transactions.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- What I Learned -->
+        <section id="learnings" class="py-20 sm:py-28 bg-white/[0.01]">
+            <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+                <div class="reveal mb-14">
+                    <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Learnings</span>
+                    <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Growth as an Engineer</h2>
+                    <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+                </div>
+                <div class="grid sm:grid-cols-2 gap-5 text-[#a1a1a6] text-[14px]">
+                    <div class="reveal glass p-5">Backend architecture isn't just about code — it's about designing systems that can evolve. I learned to prioritize domain modeling and clean boundaries.</div>
+                    <div class="reveal glass p-5">API design is a contract. Consistent error handling, versioning, and documentation make integrations predictable for frontend and mobile clients.</div>
+                    <div class="reveal glass p-5">Database modeling for tournament logic taught me to think in state machines and relational integrity, not just tables.</div>
+                    <div class="reveal glass p-5">Building for real users forces you to consider edge cases early — offline support, concurrency, and role permissions became central concerns.</div>
+                    <div class="reveal glass p-5">Software design principles like SOLID and DRY aren't academic — they directly impact how easily you can add features without rewriting everything.</div>
+                    <div class="reveal glass p-5">This project reinforced that scalable systems start with thoughtful architecture, not premature optimization. The foundation matters most.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Future Roadmap -->
+        <section id="roadmap" class="py-20 sm:py-28">
+            <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+                <div class="reveal mb-14">
+                    <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Roadmap</span>
+                    <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">What's Next</h2>
+                    <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+                </div>
+                <div class="roadmap-timeline">
+                    <div class="roadmap-item reveal">
+                        <h4 class="text-sm font-semibold text-white">Live Scoring & Spectator Mode</h4>
+                        <p class="text-[#98989d] text-xs">Real‑time WebSocket updates for match scores and a dedicated spectator view.</p>
+                    </div>
+                    <div class="roadmap-item reveal">
+                        <h4 class="text-sm font-semibold text-white">QR Code Registration</h4>
+                        <p class="text-[#98989d] text-xs">Players scan to check in, view schedules, and receive match notifications.</p>
+                    </div>
+                    <div class="roadmap-item reveal">
+                        <h4 class="text-sm font-semibold text-white">Offline Synchronization</h4>
+                        <p class="text-[#98989d] text-xs">Robust sync engine for the mobile app to handle intermittent connectivity gracefully.</p>
+                    </div>
+                    <div class="roadmap-item reveal">
+                        <h4 class="text-sm font-semibold text-white">Push Notifications</h4>
+                        <p class="text-[#98989d] text-xs">Match reminders, score updates, and tournament announcements via Firebase Cloud Messaging.</p>
+                    </div>
+                    <div class="roadmap-item reveal">
+                        <h4 class="text-sm font-semibold text-white">AI Match Insights</h4>
+                        <p class="text-[#98989d] text-xs">Basic pattern recognition to highlight player tendencies and suggest training areas.</p>
+                    </div>
+                    <div class="roadmap-item reveal">
+                        <h4 class="text-sm font-semibold text-white">Cloud Deployment & Scaling</h4>
+                        <p class="text-[#98989d] text-xs">Full migration to AWS with auto‑scaling groups, managed database, and CDN for assets.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Screenshot Gallery -->
+        <section id="gallery" class="py-20 sm:py-28 bg-white/[0.01]">
+            <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10">
+                <div class="text-center mb-14 reveal">
+                    <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Gallery</span>
+                    <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight">Screenshots</h2>
+                    <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Home Screen</span></div>
+                    <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Tournament Dashboard</span></div>
+                    <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Registration</span></div>
+                    <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Match Scoring</span></div>
+                    <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Player Profile</span></div>
+                    <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Statistics</span></div>
+                    <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Club Management</span></div>
+                    <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Bracket View</span></div>
+                    <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Admin Dashboard</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final Reflection -->
+        <section id="reflection" class="py-20 sm:py-28">
+            <div class="max-w-3xl mx-auto px-5 sm:px-8 lg:px-10 text-center">
+                <div class="reveal">
+                    <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Reflection</span>
+                    <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-8">Why This Project Matters</h2>
+                </div>
+                <div class="reveal reveal-delay-1 space-y-5 text-[#a1a1a6] leading-relaxed text-[15px]">
+                    <p>PointPulse represents much more than another CRUD application. It's a deep exploration of backend engineering, scalable system design, and the craft of building software that solves practical problems. Every architectural decision — from the configurable tournament engine to the offline‑capable mobile client — was driven by real user needs, not theoretical exercises.</p>
+                    <p>Throughout this project, I focused on writing maintainable code, designing flexible systems, and building a foundation that can continue evolving as the platform grows. The experience solidified my passion for backend architecture, API design, and the invisible engineering that makes great products possible.</p>
+                    <p class="text-white font-medium">I'm committed to creating software that is reliable, scalable, and genuinely useful — because the best systems are the ones that quietly make things work.</p>
+                </div>
+                <div class="reveal reveal-delay-2 mt-10">
+                <div class="flex items-center justify-center gap-4">
+                    <!-- Back to Portfolio -->
+                    <a href="../portfolio.html" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.06] border border-white/[0.1] text-sm font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        Back to Portfolio
+                    </a>
+
+                    <!-- Next Project (adjust href to your actual next case study) -->
+                    <a href="../projects/hospital.html" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.06] border border-white/[0.1] text-sm font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">
+                        Next Project
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="py-8 border-t border-white/[0.05] text-center text-[#6e6e73] text-xs">
+            <p>PointPulse — Built by Rhunor A. &copy; <span id="current-year"></span></p>
+        </footer>
+
+    </div> <!-- End of .page-wrapper -->
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Current year
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+
+            // Progress bar
+            const progressBar = document.getElementById('progress-bar');
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const progress = (scrollTop / docHeight) * 100;
+                progressBar.style.width = progress + '%';
+            });
+
+            // Reveal on scroll
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+            reveals.forEach(el => observer.observe(el));
+
+            // Floating TOC active state
+            const tocLinks = document.querySelectorAll('.toc-link');
+            const sections = document.querySelectorAll('section[id]');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 120;
+                    if (window.scrollY >= sectionTop) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                tocLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+            // Smooth scroll for TOC links
+            tocLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        window.scrollTo({ top: target.offsetTop - 80, behavior: 'smooth' });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

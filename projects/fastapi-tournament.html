@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI Tournament Backend — Case Study | Rhunor A</title>
+    <meta name="description" content="Backend engineering case study: A scalable tournament management platform built with FastAPI, SQLAlchemy, and clean architecture. REST API design, system architecture.">
+    <meta property="og:title" content="FastAPI Tournament Backend — Case Study">
+    <meta property="og:description" content="Backend engineering: FastAPI, SQLAlchemy, Alembic, PostgreSQL. Clean architecture, REST APIs, tournament engine.">
+    <meta property="og:type" content="article">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FastAPI Tournament Backend — Case Study">
+    <meta name="twitter:description" content="Scalable tournament backend: FastAPI, clean architecture, RESTful API design.">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['SF Pro Display', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['SF Mono', 'JetBrains Mono', 'Fira Code', 'ui-monospace', 'monospace'],
+                    },
+                    animation: {
+                        'float': 'float 8s ease-in-out infinite',
+                        'pulse-soft': 'pulseSoft 4s ease-in-out infinite',
+                        'fade-in-up': 'fadeInUp 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards',
+                    },
+                    keyframes: {
+                        float: { '0%, 100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-12px)' } },
+                        pulseSoft: { '0%, 100%': { opacity: '0.7', transform: 'scale(1)' }, '50%': { opacity: '1', transform: 'scale(1.03)' } },
+                        fadeInUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                    },
+                },
+            },
+        };
+    </script>
+
+    <style>
+        :root {
+            --bg: #08080a;
+            --surface: #121214;
+            --card: #1c1c1e;
+            --border: rgba(255, 255, 255, 0.06);
+            --text: #e8e8ed;
+            --text-secondary: #98989d;
+            --accent: #6366f1;
+            --accent-purple: #8b5cf6;
+            --accent-teal: #14b8a6;
+            --radius: 18px;
+        }
+
+        /* REMOVED transform from body - it was breaking the sticky nav */
+        body {
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            letter-spacing: -0.01em;
+        }
+
+        /* Applied transform to a wrapper instead */
+        .page-wrapper {
+            transform: scale(1.2);
+            transform-origin: 0 0;
+            width: calc(100% / 1.2);
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3a3a3c; border-radius: 10px; }
+
+        .glass {
+            background: rgba(28, 28, 30, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+        .glass-hover:hover {
+            border-color: rgba(139, 92, 246, 0.25);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.08);
+        }
+
+        .gradient-border {
+            position: relative;
+            background: #1c1c1e;
+            border-radius: var(--radius);
+        }
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: calc(var(--radius) + 1px);
+            padding: 1px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #14b8a6, #6366f1);
+            background-size: 300% 300%;
+            animation: borderGlow 6s ease infinite;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        @keyframes borderGlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(22px);
+            transition: opacity 0.65s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        #progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            z-index: 100;
+            transition: width 0.1s linear;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .toc-sidebar { position: fixed; left: 24px; top: 50%; transform: translateY(-50%); z-index: 50; display: none; }
+        @media (min-width: 1280px) { .toc-sidebar { display: block; } }
+        .toc-link { display: block; padding: 4px 0; font-size: 13px; color: #6e6e73; transition: color 0.2s; text-decoration: none; position: relative; padding-left: 14px; }
+        .toc-link::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: #3a3a3c; transition: background 0.2s, transform 0.2s; }
+        .toc-link.active { color: #a78bfa; }
+        .toc-link.active::before { background: #a78bfa; transform: translateY(-50%) scale(1.4); }
+
+        .diagram-placeholder {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px dashed rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 160px;
+            color: #6e6e73;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .diagram-placeholder::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(99,102,241,0.03) 0%, transparent 50%, rgba(139,92,246,0.03) 100%);
+            pointer-events: none;
+        }
+        .diagram-placeholder:hover {
+            border-color: rgba(139, 92, 246, 0.35);
+            background: rgba(99, 102, 241, 0.03);
+        }
+
+        .roadmap-timeline { position: relative; padding-left: 32px; }
+        .roadmap-timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, #6366f1, #8b5cf6, transparent); border-radius: 2px; }
+        .roadmap-item { position: relative; margin-bottom: 28px; }
+        .roadmap-item::before { content: ''; position: absolute; left: -28px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: #6366f1; border: 2px solid #121214; z-index: 2; }
+
+        .code-placeholder {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'SF Mono', 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #6e6e73;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .code-placeholder:hover {
+            border-color: rgba(139,92,246,0.3);
+            background: rgba(99,102,241,0.03);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal { transition: none; opacity: 1; transform: none; }
+            * { animation-duration: 0.01ms !important; }
+        }
+    </style>
+</head>
+<body class="bg-[#08080a] text-[#e8e8ed] font-sans antialiased">
+
+    <!-- Reading Progress Bar -->
+    <div id="progress-bar"></div>
+
+    <!-- Floating Table of Contents -->
+    <nav class="toc-sidebar" aria-label="Table of Contents">
+        <div class="glass p-4 rounded-2xl shadow-2xl" style="min-width: 170px;">
+            <p class="text-xs font-semibold text-[#98989d] mb-3 tracking-widest uppercase">On this page</p>
+            <a href="#overview" class="toc-link">Overview</a>
+            <a href="#objectives" class="toc-link">Objectives</a>
+            <a href="#architecture" class="toc-link">Architecture</a>
+            <a href="#api-design" class="toc-link">API Design</a>
+            <a href="#database" class="toc-link">Database</a>
+            <a href="#modules" class="toc-link">Feature Modules</a>
+            <a href="#decisions" class="toc-link">Decisions</a>
+            <a href="#security" class="toc-link">Security</a>
+            <a href="#challenges" class="toc-link">Challenges</a>
+            <a href="#learnings" class="toc-link">Learnings</a>
+            <a href="#roadmap" class="toc-link">Roadmap</a>
+            <a href="#gallery" class="toc-link">Gallery</a>
+            <a href="#code-highlights" class="toc-link">Code</a>
+            <a href="#reflection" class="toc-link">Reflection</a>
+        </div>
+    </nav>
+
+    <!-- Sticky Navigation -->
+    <nav class="sticky top-0 z-40 bg-[#08080a]/80 backdrop-blur-2xl border-b border-white/[0.06]" aria-label="Project navigation">
+        <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10 flex items-center justify-between h-14">
+            <a href="../portfolio.html" class="text-sm font-medium text-[#98989d] hover:text-white transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                Back to Portfolio
+            </a>
+            <div class="flex items-center gap-3">
+                <a href="YOUR_API_DOCS" class="px-4 py-2 rounded-full bg-indigo-600/20 border border-indigo-500/20 text-indigo-300 text-xs font-medium hover:bg-indigo-600/30 transition-all">API Docs</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-20 pb-16 sm:pt-28 sm:pb-24 overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none select-none">
+            <div class="absolute top-1/4 left-1/4 w-72 h-72 bg-indigo-500/6 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-1/3 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+        </div>
+        <div class="relative max-w-4xl mx-auto px-5 sm:px-8 text-center">
+            <div class="reveal mx-auto mb-10 max-w-2xl gradient-border overflow-hidden rounded-2xl">
+                <div class="diagram-placeholder h-64 sm:h-80 flex flex-col items-center justify-center bg-white/[0.01]">
+                    <svg class="w-14 h-14 text-[#3a3a3c] mb-4" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+                        <rect x="2" y="2" width="8" height="8" rx="1.5" stroke="currentColor"/><rect x="14" y="2" width="8" height="8" rx="1.5" stroke="currentColor"/><rect x="2" y="14" width="8" height="8" rx="1.5" stroke="currentColor"/><rect x="14" y="14" width="8" height="8" rx="1.5" stroke="currentColor"/>
+                        <path d="M10 6h4M6 10v4m12-4v4M10 18h4" stroke="currentColor" stroke-dasharray="3 3"/>
+                    </svg>
+                    <p class="text-sm text-[#6e6e73] font-mono">System Architecture Diagram</p>
+                </div>
+            </div>
+            <h1 class="reveal reveal-delay-1 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white mb-4">FastAPI Tournament Backend</h1>
+            <p class="reveal reveal-delay-2 text-xl sm:text-2xl text-[#98989d] font-medium mb-6">Backend Engineering • REST API • System Architecture</p>
+            <p class="reveal reveal-delay-3 text-[#a1a1a6] max-w-xl mx-auto text-[15px] leading-relaxed mb-8">A scalable backend platform for tournament management built with FastAPI, designed around clean architecture, modular services, and RESTful APIs.</p>
+            <div class="reveal reveal-delay-4 flex flex-wrap justify-center gap-2 mb-8">
+                <span class="px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 text-xs font-medium border border-indigo-500/20">FastAPI</span>
+                <span class="px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-400 text-xs font-medium border border-purple-500/20">Python</span>
+                <span class="px-3 py-1.5 rounded-lg bg-teal-500/10 text-teal-400 text-xs font-medium border border-teal-500/20">SQLAlchemy</span>
+                <span class="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20">Alembic</span>
+                <span class="px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-400 text-xs font-medium border border-rose-500/20">PostgreSQL</span>
+                <span class="px-3 py-1.5 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-medium border border-sky-500/20">JWT Auth</span>
+                <span class="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/20">Pydantic</span>
+                <span class="px-3 py-1.5 rounded-lg bg-pink-500/10 text-pink-400 text-xs font-medium border border-pink-500/20">Docker</span>
+            </div>
+            <div class="reveal reveal-delay-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/8 border border-amber-500/20 text-amber-400 text-sm">
+                <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span></span>
+                In Development
+            </div>
+        </div>
+    </section>
+
+    <!-- Project Overview -->
+    <section id="overview" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Overview</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">A Backend-First Platform</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="reveal reveal-delay-1 space-y-4 text-[#a1a1a6] leading-relaxed text-[15px]">
+                <p>This project is a pure backend engineering effort — an API-first tournament management platform built with <strong class="text-white">FastAPI</strong>. It serves as the foundational layer responsible for authentication, tournament orchestration, player registration, real-time statistics computation, and all business logic, while remaining completely independent of any frontend implementation.</p>
+                <p>The architecture prioritizes <strong class="text-white">clean separation of concerns</strong>, <strong class="text-white">maintainability</strong>, and <strong class="text-white">scalability</strong> through a layered design: API routers handle HTTP concerns, service modules encapsulate business rules, and SQLAlchemy models abstract database interactions. This modular approach ensures the backend can evolve independently and integrate seamlessly with web, mobile, or third-party clients.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Project Objectives -->
+    <section id="objectives" class="py-20 sm:py-28">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Objectives</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Engineering Goals</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-4">
+                <div class="reveal glass p-5"><span class="text-indigo-400 text-lg font-mono">01</span><h3 class="text-sm font-semibold text-white mt-2">Scalable REST API</h3><p class="text-[#98989d] text-[13px] mt-1">Design endpoints that handle complex tournament logic efficiently.</p></div>
+                <div class="reveal glass p-5"><span class="text-purple-400 text-lg font-mono">02</span><h3 class="text-sm font-semibold text-white mt-2">Clean Separation of Concerns</h3><p class="text-[#98989d] text-[13px] mt-1">Routers, services, models, and schemas each have distinct responsibilities.</p></div>
+                <div class="reveal glass p-5"><span class="text-teal-400 text-lg font-mono">03</span><h3 class="text-sm font-semibold text-white mt-2">Reusable Business Services</h3><p class="text-[#98989d] text-[13px] mt-1">Encapsulate tournament and match logic for use across multiple endpoints.</p></div>
+                <div class="reveal glass p-5"><span class="text-amber-400 text-lg font-mono">04</span><h3 class="text-sm font-semibold text-white mt-2">Modular Routing</h3><p class="text-[#98989d] text-[13px] mt-1">Organize endpoints by domain for clarity and independent development.</p></div>
+                <div class="reveal glass p-5"><span class="text-rose-400 text-lg font-mono">05</span><h3 class="text-sm font-semibold text-white mt-2">Secure Authentication</h3><p class="text-[#98989d] text-[13px] mt-1">JWT-based auth with role validation and refresh token support.</p></div>
+                <div class="reveal glass p-5"><span class="text-sky-400 text-lg font-mono">06</span><h3 class="text-sm font-semibold text-white mt-2">Future-Proof Integration</h3><p class="text-[#98989d] text-[13px] mt-1">Frontend-agnostic design allowing any client to consume the API.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- System Architecture -->
+    <section id="architecture" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-5xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="text-center mb-14 reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Architecture</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight">System Design</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
+            </div>
+            <div class="reveal space-y-5 text-[#a1a1a6] leading-relaxed text-[15px] mb-10">
+                <p>The backend follows a <strong class="text-white">layered architecture</strong> with clear boundaries between the presentation, business logic, and data access layers. API routers handle HTTP requests and delegate to service modules, which contain all business rules. SQLAlchemy models define the database schema, while Pydantic schemas validate incoming and outgoing data.</p>
+                <p>Dependency injection is used extensively — database sessions, current user context, and configuration are injected into route handlers, keeping code testable and decoupled. Background tasks handle asynchronous operations like statistics recalculation.</p>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5">
+                <div class="reveal glass p-6 text-center">
+                    <div class="diagram-placeholder h-52 mb-4 rounded-lg">
+                        <svg class="w-12 h-12 text-[#3a3a3c] mb-2" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><rect x="2" y="4" width="6" height="4" rx="1"/><rect x="10" y="1" width="6" height="4" rx="1"/><rect x="18" y="4" width="4" height="4" rx="1"/><rect x="2" y="14" width="6" height="5" rx="1"/><rect x="10" y="12" width="6" height="6" rx="1"/><rect x="18" y="14" width="4" height="6" rx="1"/><path d="M5 8v6m13-4v6" stroke="currentColor" stroke-dasharray="2 2"/></svg>
+                        <span class="text-sm">Overall Architecture Diagram</span>
+                    </div>
+                    <p class="text-[#86868b] text-xs">Presentation → Business Logic → Data Access layers</p>
+                </div>
+                <div class="reveal glass p-6 text-center">
+                    <div class="diagram-placeholder h-52 mb-4 rounded-lg">
+                        <svg class="w-12 h-12 text-[#3a3a3c] mb-2" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="5" rx="1"/><rect x="2" y="9" width="20" height="5" rx="1"/><rect x="2" y="16" width="20" height="5" rx="1"/></svg>
+                        <span class="text-sm">Folder Structure</span>
+                    </div>
+                    <p class="text-[#86868b] text-xs">Routers, services, models, schemas organization</p>
+                </div>
+                <div class="reveal glass p-6 text-center">
+                    <div class="diagram-placeholder h-52 mb-4 rounded-lg"><span class="text-sm">Dependency Graph</span></div>
+                    <p class="text-[#86868b] text-xs">Module dependencies and injection flow</p>
+                </div>
+                <div class="reveal glass p-6 text-center">
+                    <div class="diagram-placeholder h-52 mb-4 rounded-lg"><span class="text-sm">Request Lifecycle Diagram</span></div>
+                    <p class="text-[#86868b] text-xs">HTTP request → middleware → router → service → database</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Design -->
+    <section id="api-design" class="py-20 sm:py-28">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">API Design</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">RESTful API Philosophy</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="reveal space-y-4 text-[#a1a1a6] leading-relaxed text-[15px] mb-8">
+                <p>The API follows REST conventions with <strong class="text-white">resource-based endpoints</strong>, consistent JSON responses, and proper HTTP status codes. All endpoints are documented automatically via OpenAPI (Swagger) using FastAPI's built-in support. Request and response validation is handled by Pydantic schemas, ensuring data integrity at the API boundary.</p>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5">
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Consistent Responses</h3><p class="text-[#98989d] text-[13px]">Standardized envelope with status, data, and error fields across all endpoints.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Pagination & Filtering</h3><p class="text-[#98989d] text-[13px]">Cursor and offset-based pagination with query parameter filtering.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Error Handling</h3><p class="text-[#98989d] text-[13px]">Global exception handlers return structured error responses with actionable messages.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Automatic Documentation</h3><p class="text-[#98989d] text-[13px]">Swagger UI and ReDoc generated from Pydantic schemas and route decorators.</p></div>
+            </div>
+            <div class="grid sm:grid-cols-3 gap-4 mt-6">
+                <div class="reveal diagram-placeholder h-40 rounded-xl"><span class="text-xs">Swagger Documentation</span></div>
+                <div class="reveal diagram-placeholder h-40 rounded-xl"><span class="text-xs">OpenAPI Specification</span></div>
+                <div class="reveal diagram-placeholder h-40 rounded-xl"><span class="text-xs">Sample Request/Response</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Database Design -->
+    <section id="database" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Database</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Data Modeling</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="reveal space-y-4 text-[#a1a1a6] leading-relaxed text-[15px] mb-8">
+                <p>The database uses <strong class="text-white">PostgreSQL</strong> with a normalized relational schema. SQLAlchemy ORM models map Python classes to database tables, while Alembic handles schema migrations with version control. Foreign keys, unique constraints, and indexes are applied thoughtfully to maintain data integrity and query performance.</p>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5">
+                <div class="reveal glass p-6 text-center"><div class="diagram-placeholder h-44 mb-4 rounded-lg"><span class="text-sm">Entity Relationship Diagram</span></div><p class="text-[#86868b] text-xs">Tournaments, players, matches, and statistics relationships</p></div>
+                <div class="reveal glass p-6 text-center"><div class="diagram-placeholder h-44 mb-4 rounded-lg"><span class="text-sm">Migration Flow</span></div><p class="text-[#86868b] text-xs">Alembic revision history and upgrade/downgrade paths</p></div>
+                <div class="reveal glass p-6 text-center"><div class="diagram-placeholder h-44 mb-4 rounded-lg"><span class="text-sm">Database Schema</span></div><p class="text-[#86868b] text-xs">Table definitions, constraints, and index strategy</p></div>
+                <div class="reveal glass p-6 text-center"><div class="diagram-placeholder h-44 mb-4 rounded-lg"><span class="text-sm">Relationship Diagram</span></div><p class="text-[#86868b] text-xs">Foreign key connections across domain models</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature Modules -->
+    <section id="modules" class="py-20 sm:py-28">
+        <div class="max-w-5xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="text-center mb-14 reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Feature Modules</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight">Domain Services</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
+            </div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="reveal glass p-5 text-center"><div class="diagram-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Auth Module</span></div><h4 class="text-sm font-semibold text-white">Authentication</h4><p class="text-[#86868b] text-xs mt-1">JWT issuance, refresh, and role validation.</p></div>
+                <div class="reveal glass p-5 text-center"><div class="diagram-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Player Module</span></div><h4 class="text-sm font-semibold text-white">Players</h4><p class="text-[#86868b] text-xs mt-1">Registration, profiles, and tournament history.</p></div>
+                <div class="reveal glass p-5 text-center"><div class="diagram-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Team Module</span></div><h4 class="text-sm font-semibold text-white">Teams</h4><p class="text-[#86868b] text-xs mt-1">Team creation, roster management, and statistics.</p></div>
+                <div class="reveal glass p-5 text-center"><div class="diagram-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Tournament Module</span></div><h4 class="text-sm font-semibold text-white">Tournaments</h4><p class="text-[#86868b] text-xs mt-1">Creation, format configuration, and lifecycle.</p></div>
+                <div class="reveal glass p-5 text-center"><div class="diagram-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Match Module</span></div><h4 class="text-sm font-semibold text-white">Matches</h4><p class="text-[#86868b] text-xs mt-1">Scheduling, scoring, and state management.</p></div>
+                <div class="reveal glass p-5 text-center"><div class="diagram-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Stats Module</span></div><h4 class="text-sm font-semibold text-white">Statistics</h4><p class="text-[#86868b] text-xs mt-1">Aggregation, rankings, and performance analytics.</p></div>
+                <div class="reveal glass p-5 text-center"><div class="diagram-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Notification Module</span></div><h4 class="text-sm font-semibold text-white">Notifications</h4><p class="text-[#86868b] text-xs mt-1">Event-driven alerts for match updates.</p></div>
+                <div class="reveal glass p-5 text-center"><div class="diagram-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Permission Module</span></div><h4 class="text-sm font-semibold text-white">Permissions</h4><p class="text-[#86868b] text-xs mt-1">Role-based access for organizers and players.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Engineering Decisions -->
+    <section id="decisions" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Decisions</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Engineering Choices</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="space-y-6">
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Why FastAPI</h3><p class="text-[#a1a1a6] text-[13px] mt-2">FastAPI was selected for its native async support, automatic OpenAPI documentation via Pydantic, and excellent performance. Its dependency injection system enables clean, testable code by decoupling route handlers from infrastructure concerns like database sessions.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Why SQLAlchemy</h3><p class="text-[#a1a1a6] text-[13px] mt-2">SQLAlchemy provides a mature ORM with both high-level and low-level query capabilities. Its session management integrates naturally with FastAPI's dependency injection, and its relationship mapping handles complex tournament data models elegantly.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Why Alembic</h3><p class="text-[#a1a1a6] text-[13px] mt-2">Database migrations need to be version-controlled and reproducible. Alembic auto-generates migration scripts from SQLAlchemy model changes, making schema evolution safe and trackable across development and production environments.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Why Pydantic</h3><p class="text-[#a1a1a6] text-[13px] mt-2">Pydantic schemas provide runtime validation with clear error messages. FastAPI uses them to validate request bodies, query parameters, and path parameters automatically — reducing boilerplate and catching invalid data before it reaches business logic.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Dependency Injection</h3><p class="text-[#a1a1a6] text-[13px] mt-2">FastAPI's dependency system allows database sessions, configuration, and user context to be injected directly into route handlers. This promotes loose coupling and simplifies unit testing by making dependencies swappable.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Clean Architecture</h3><p class="text-[#a1a1a6] text-[13px] mt-2">Separating routers, services, models, and schemas ensures that each layer has a single responsibility. Business logic lives in services — not in route handlers — making it reusable across different API versions or background tasks.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security -->
+    <section id="security" class="py-20 sm:py-28">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Security</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Authentication & Authorization</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="reveal space-y-4 text-[#a1a1a6] leading-relaxed text-[15px] mb-8">
+                <p>Security is implemented through <strong class="text-white">JWT-based authentication</strong> with access and refresh tokens. Passwords are hashed using bcrypt. Authorization checks are enforced via dependency injection — protected routes verify the user's role before executing. Input validation at the Pydantic layer prevents malformed data from reaching the database, while SQLAlchemy's parameterized queries protect against injection attacks.</p>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5">
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">JWT Authentication</h3><p class="text-[#98989d] text-[13px]">Stateless tokens with configurable expiration and refresh rotation.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Password Hashing</h3><p class="text-[#98989d] text-[13px]">Bcrypt hashing with salt for secure credential storage.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Role-Based Authorization</h3><p class="text-[#98989d] text-[13px]">Organizer, referee, and player roles with scoped permissions.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white mb-2">Input Validation</h3><p class="text-[#98989d] text-[13px]">Pydantic schemas validate all incoming data at the API boundary.</p></div>
+            </div>
+            <div class="reveal mt-6 glass p-6 text-center">
+                <div class="diagram-placeholder h-48 rounded-lg"><span class="text-sm">Authentication Flow Diagram</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Challenges -->
+    <section id="challenges" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Challenges</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Engineering Hurdles</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="space-y-5">
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Designing Scalable APIs</h3><p class="text-[#a1a1a6] text-[13px] mt-2">Balancing RESTful conventions with the complexity of tournament logic required careful endpoint design — each resource needed to support nested operations without creating overly deep URL structures.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Managing Complex Relationships</h3><p class="text-[#a1a1a6] text-[13px] mt-2">Tournament entities — players, teams, matches, brackets — have deeply interconnected relationships. SQLAlchemy's relationship loading strategies required tuning to avoid N+1 query problems while keeping the code readable.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Maintaining Modular Architecture</h3><p class="text-[#a1a1a6] text-[13px] mt-2">As features grew, resisting the temptation to couple services was challenging. Regular refactoring and adherence to the service-layer pattern kept modules independent and testable.</p></div>
+                <div class="reveal glass p-5"><h3 class="text-sm font-semibold text-white">Keeping Business Logic Independent</h3><p class="text-[#a1a1a6] text-[13px] mt-2">Ensuring that services don't depend on HTTP concepts (request objects, status codes) was critical for reuse. Business logic returns domain objects and raises domain exceptions — the API layer translates these into HTTP responses.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What I Learned -->
+    <section id="learnings" class="py-20 sm:py-28">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Learnings</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Growth as a Backend Engineer</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5 text-[#a1a1a6] text-[14px]">
+                <div class="reveal glass p-5">Building with FastAPI deepened my understanding of async Python, dependency injection patterns, and how framework design influences code organization.</div>
+                <div class="reveal glass p-5">API design is a craft — thinking through resource modeling, error semantics, and documentation shaped how I approach backend architecture.</div>
+                <div class="reveal glass p-5">SQLAlchemy mastery requires understanding both the ORM and the underlying SQL — relationship loading, session management, and migration workflows are essential skills.</div>
+                <div class="reveal glass p-5">Alembic taught me to treat database schema changes as code — versioned, reviewable, and reversible.</div>
+                <div class="reveal glass p-5">Clean architecture isn't an academic concept — it directly impacts how quickly you can add features, fix bugs, and onboard collaborators.</div>
+                <div class="reveal glass p-5">Backend scalability starts with thoughtful design — modular services, efficient queries, and stateless authentication enable horizontal scaling when needed.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Future Roadmap -->
+    <section id="roadmap" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-4xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="reveal mb-14">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Roadmap</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-6">Future Enhancements</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mb-8"></div>
+            </div>
+            <div class="roadmap-timeline">
+                <div class="roadmap-item reveal"><h4 class="text-sm font-semibold text-white">WebSocket Support</h4><p class="text-[#98989d] text-xs">Real-time match updates and live scoring via WebSocket connections.</p></div>
+                <div class="roadmap-item reveal"><h4 class="text-sm font-semibold text-white">Redis Caching</h4><p class="text-[#98989d] text-xs">Cache frequently accessed tournament data and leaderboard results.</p></div>
+                <div class="roadmap-item reveal"><h4 class="text-sm font-semibold text-white">Background Jobs</h4><p class="text-[#98989d] text-xs">Offload statistics computation and notification dispatch to task queues.</p></div>
+                <div class="roadmap-item reveal"><h4 class="text-sm font-semibold text-white">Docker Compose</h4><p class="text-[#98989d] text-xs">Multi-container orchestration for API, database, and cache services.</p></div>
+                <div class="roadmap-item reveal"><h4 class="text-sm font-semibold text-white">CI/CD Pipeline</h4><p class="text-[#98989d] text-xs">Automated testing, linting, and deployment workflow.</p></div>
+                <div class="roadmap-item reveal"><h4 class="text-sm font-semibold text-white">Cloud Deployment</h4><p class="text-[#98989d] text-xs">Production deployment on AWS with load balancing and monitoring.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Engineering Gallery -->
+    <section id="gallery" class="py-20 sm:py-28">
+        <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="text-center mb-14 reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Engineering Gallery</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight">Architecture Diagrams</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div class="reveal diagram-placeholder h-36 rounded-xl"><span class="text-xs">System Architecture</span></div>
+                <div class="reveal diagram-placeholder h-36 rounded-xl"><span class="text-xs">Folder Structure</span></div>
+                <div class="reveal diagram-placeholder h-36 rounded-xl"><span class="text-xs">Database ERD</span></div>
+                <div class="reveal diagram-placeholder h-36 rounded-xl"><span class="text-xs">Authentication Flow</span></div>
+                <div class="reveal diagram-placeholder h-36 rounded-xl"><span class="text-xs">Sequence Diagram</span></div>
+                <div class="reveal diagram-placeholder h-36 rounded-xl"><span class="text-xs">Tournament Workflow</span></div>
+                <div class="reveal diagram-placeholder h-36 rounded-xl"><span class="text-xs">API Request Flow</span></div>
+                <div class="reveal diagram-placeholder h-36 rounded-xl"><span class="text-xs">Swagger Documentation</span></div>
+                <div class="reveal diagram-placeholder h-36 rounded-xl"><span class="text-xs">OpenAPI Schema</span></div>
+                <div class="reveal diagram-placeholder h-36 rounded-xl"><span class="text-xs">Deployment Diagram</span></div>
+                <div class="reveal diagram-placeholder h-36 rounded-xl"><span class="text-xs">Performance Flow</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Highlights -->
+    <section id="code-highlights" class="py-20 sm:py-28 bg-white/[0.01]">
+        <div class="max-w-5xl mx-auto px-5 sm:px-8 lg:px-10">
+            <div class="text-center mb-14 reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Code</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight">Code Highlights</h2>
+                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-5">
+                <div class="reveal glass p-5"><h4 class="text-xs font-semibold text-white mb-3 font-mono">Project Structure</h4><div class="code-placeholder">api/ &nbsp; routers/ &nbsp; services/ &nbsp; models/ &nbsp; schemas/ &nbsp; core/</div></div>
+                <div class="reveal glass p-5"><h4 class="text-xs font-semibold text-white mb-3 font-mono">Router Example</h4><div class="code-placeholder">@router.post("/tournaments/{id}/matches")</div></div>
+                <div class="reveal glass p-5"><h4 class="text-xs font-semibold text-white mb-3 font-mono">Service Example</h4><div class="code-placeholder">class TournamentService: &nbsp; def create_match(...)</div></div>
+                <div class="reveal glass p-5"><h4 class="text-xs font-semibold text-white mb-3 font-mono">Model Example</h4><div class="code-placeholder">class Tournament(Base): &nbsp; __tablename__ = "tournaments"</div></div>
+                <div class="reveal glass p-5"><h4 class="text-xs font-semibold text-white mb-3 font-mono">Schema Example</h4><div class="code-placeholder">class TournamentCreate(BaseModel): &nbsp; name: str</div></div>
+                <div class="reveal glass p-5"><h4 class="text-xs font-semibold text-white mb-3 font-mono">API Response Example</h4><div class="code-placeholder">{ "status": "success", "data": {...} }</div></div>
+                <div class="reveal glass p-5"><h4 class="text-xs font-semibold text-white mb-3 font-mono">Validation Example</h4><div class="code-placeholder">@validator('start_date') &nbsp; def validate_future_date(...)</div></div>
+                <div class="reveal glass p-5"><h4 class="text-xs font-semibold text-white mb-3 font-mono">Migration Example</h4><div class="code-placeholder">alembic revision --autogenerate -m "add tournaments"</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final Reflection -->
+    <section id="reflection" class="py-20 sm:py-28">
+        <div class="max-w-3xl mx-auto px-5 sm:px-8 lg:px-10 text-center">
+            <div class="reveal">
+                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Reflection</span>
+                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight mb-8">Building for the Long Term</h2>
+            </div>
+            <div class="reveal reveal-delay-1 space-y-5 text-[#a1a1a6] leading-relaxed text-[15px]">
+                <p>This project reflects my passion for backend engineering and designing systems that are scalable, maintainable, and easy to extend. The focus was never simply on building API endpoints — it was on creating a solid architectural foundation capable of supporting complex tournament applications over time.</p>
+                <p>Every layer — from the API routers to the service modules to the database models — was designed with future growth in mind. The modular structure, clean dependency injection, and comprehensive validation ensure the codebase remains approachable as features expand.</p>
+                <p class="text-white font-medium">I'm deeply interested in software architecture, backend engineering, system design, and building reliable infrastructure for modern applications — because great user experiences are built on great backends.</p>
+            </div>
+            <div class="reveal reveal-delay-2 mt-10">
+                <div class="flex items-center justify-center gap-4">
+                    <a href="../projects/logbook.html" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.06] border border-white/[0.1] text-sm font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        Previous Project
+                    </a>
+
+                    <!-- Back to Portfolio -->
+                    <a href="../portfolio.html" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.06] border border-white/[0.1] text-sm font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">
+                        
+                        Back to Portfolio
+                    </a>
+
+                    <!-- Next Project (adjust href to your actual next case study) -->
+                    <a href="../projects/soundora.html" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.06] border border-white/[0.1] text-sm font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">
+                        Next Project
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+                </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-8 border-t border-white/[0.05] text-center text-[#6e6e73] text-xs">
+        <p>FastAPI Tournament Backend — Built by Rhunor A. &copy; <span id="current-year"></span></p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+            const progressBar = document.getElementById('progress-bar');
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const progress = (scrollTop / docHeight) * 100;
+                progressBar.style.width = progress + '%';
+            });
+            const reveals = document.querySelectorAll('.reveal');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); } });
+            }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+            reveals.forEach(el => observer.observe(el));
+            const tocLinks = document.querySelectorAll('.toc-link');
+            const sections = document.querySelectorAll('section[id]');
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => { if (window.scrollY >= section.offsetTop - 120) current = section.getAttribute('id'); });
+                tocLinks.forEach(link => { link.classList.remove('active'); if (link.getAttribute('href') === '#' + current) link.classList.add('active'); });
+            });
+            tocLinks.forEach(link => { link.addEventListener('click', function(e) { e.preventDefault(); const target = document.querySelector(this.getAttribute('href')); if (target) window.scrollTo({ top: target.offsetTop - 80, behavior: 'smooth' }); }); });
+        });
+    </script>
+</body>
+</html>
