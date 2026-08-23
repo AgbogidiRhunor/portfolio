@@ -1,0 +1,113 @@
+<svg viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg" font-family="SF Pro Display, Inter, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0c0c0e"/>
+      <stop offset="100%" stop-color="#08080a"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1000" height="620" fill="url(#bgGrad)"/>
+  <circle cx="150" cy="120" r="220" fill="url(#glow1)"/>
+  <circle cx="880" cy="480" r="260" fill="url(#glow2)"/>
+
+  <!-- top bar -->
+  <text x="40" y="45" fill="#e8e8ed" font-size="15" font-weight="700">Hospital Management System</text>
+  <text x="40" y="65" fill="#6e6e73" font-size="11" font-family="SF Mono, ui-monospace, monospace">Secure Access Portal</text>
+
+  <!-- LEFT: Login card -->
+  <g>
+    <rect x="40" y="90" width="430" height="500" rx="18" fill="#1c1c1e" stroke="#2e2e30"/>
+    <rect x="40" y="90" width="430" height="500" rx="18" fill="none" stroke="url(#accentGrad)" stroke-width="1.5" opacity="0.35"/>
+
+    <text x="70" y="140" fill="#fff" font-size="18" font-weight="700">Sign in</text>
+    <text x="70" y="162" fill="#86868b" font-size="12">Access your role-based dashboard</text>
+
+    <!-- email field -->
+    <text x="70" y="200" fill="#98989d" font-size="11" font-weight="600">EMAIL ADDRESS</text>
+    <rect x="70" y="210" width="370" height="44" rx="10" fill="#121214" stroke="#2e2e30"/>
+    <text x="86" y="237" fill="#e8e8ed" font-size="13" font-family="SF Mono, ui-monospace, monospace">doctor.amina@hms.ng</text>
+
+    <!-- password field -->
+    <text x="70" y="278" fill="#98989d" font-size="11" font-weight="600">PASSWORD</text>
+    <rect x="70" y="288" width="370" height="44" rx="10" fill="#121214" stroke="#2e2e30"/>
+    <text x="86" y="315" fill="#e8e8ed" font-size="14" letter-spacing="3">••••••••••••</text>
+
+    <!-- role selector -->
+    <text x="70" y="356" fill="#98989d" font-size="11" font-weight="600">SIGN IN AS</text>
+    <rect x="70" y="366" width="118" height="36" rx="9" fill="rgba(99,102,241,0.14)" stroke="#6366f1" stroke-width="1.2"/>
+    <text x="129" y="389" fill="#a5b4fc" font-size="11" text-anchor="middle" font-weight="600">Doctor</text>
+    <rect x="196" y="366" width="118" height="36" rx="9" fill="#121214" stroke="#2e2e30"/>
+    <text x="255" y="389" fill="#86868b" font-size="11" text-anchor="middle">Patient</text>
+    <rect x="322" y="366" width="118" height="36" rx="9" fill="#121214" stroke="#2e2e30"/>
+    <text x="381" y="389" fill="#86868b" font-size="11" text-anchor="middle">Staff</text>
+
+    <!-- sign in button -->
+    <rect x="70" y="424" width="370" height="46" rx="12" fill="url(#accentGrad)"/>
+    <text x="255" y="452" fill="#fff" font-size="13" text-anchor="middle" font-weight="700">Sign In Securely</text>
+
+    <!-- jwt badge -->
+    <rect x="70" y="492" width="370" height="56" rx="10" fill="rgba(20,184,166,0.08)" stroke="rgba(20,184,166,0.25)"/>
+    <text x="86" y="514" fill="#5eead4" font-size="10" font-family="SF Mono, ui-monospace, monospace" font-weight="700">JWT ACCESS TOKEN</text>
+    <text x="86" y="532" fill="#6e6e73" font-size="9" font-family="SF Mono, ui-monospace, monospace">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</text>
+
+    <text x="70" y="575" fill="#6e6e73" font-size="10" text-anchor="start">Forgot password?</text>
+    <text x="440" y="575" fill="#6e6e73" font-size="10" text-anchor="end">2FA enabled</text>
+  </g>
+
+  <!-- RIGHT: Profile management panel -->
+  <g>
+    <rect x="500" y="90" width="460" height="500" rx="18" fill="#1c1c1e" stroke="#2e2e30"/>
+
+    <text x="530" y="138" fill="#fff" font-size="16" font-weight="700">Profile &amp; Role Management</text>
+    <text x="530" y="160" fill="#86868b" font-size="11">Administrator view</text>
+
+    <!-- avatar row -->
+    <circle cx="556" cy="205" r="24" fill="url(#accentGrad)"/>
+    <text x="556" y="211" fill="#fff" font-size="14" text-anchor="middle" font-weight="700">AY</text>
+    <text x="596" y="200" fill="#e8e8ed" font-size="13" font-weight="600">Dr. Amina Yusuf</text>
+    <text x="596" y="216" fill="#86868b" font-size="11">Cardiology · Staff ID #DOC-1042</text>
+
+    <line x1="530" y1="244" x2="930" y2="244" stroke="#2e2e30"/>
+
+    <!-- role chips -->
+    <text x="530" y="272" fill="#98989d" font-size="11" font-weight="600">ASSIGNED ROLE</text>
+    <rect x="530" y="282" width="88" height="28" rx="14" fill="rgba(99,102,241,0.14)" stroke="#6366f1"/>
+    <text x="574" y="300" fill="#a5b4fc" font-size="10" text-anchor="middle" font-weight="700">Doctor</text>
+
+    <text x="530" y="336" fill="#98989d" font-size="11" font-weight="600">PERMISSIONS</text>
+    <g font-size="10" fill="#86868b">
+      <circle cx="536" cy="356" r="3" fill="#34d399"/>
+      <text x="546" y="360">View &amp; edit assigned patient records</text>
+      <circle cx="536" cy="376" r="3" fill="#34d399"/>
+      <text x="546" y="380">Create prescriptions &amp; lab requests</text>
+      <circle cx="536" cy="396" r="3" fill="#34d399"/>
+      <text x="546" y="400">Manage own appointment calendar</text>
+      <circle cx="536" cy="416" r="3" fill="#f43f5e"/>
+      <text x="546" y="420">No access to billing or admin settings</text>
+    </g>
+
+    <line x1="530" y1="444" x2="930" y2="444" stroke="#2e2e30"/>
+
+    <text x="530" y="472" fill="#98989d" font-size="11" font-weight="600">SESSION</text>
+    <rect x="530" y="482" width="400" height="60" rx="10" fill="#121214" stroke="#2e2e30"/>
+    <text x="546" y="504" fill="#86868b" font-size="10">Token issued</text>
+    <text x="546" y="522" fill="#e8e8ed" font-size="10" font-family="SF Mono, ui-monospace, monospace">Access: 15 min · Refresh: 7 days</text>
+    <rect x="770" y="494" width="140" height="26" rx="8" fill="rgba(139,92,246,0.14)" stroke="#8b5cf6"/>
+    <text x="840" y="511" fill="#c4b5fd" font-size="9" text-anchor="middle">Revoke Session</text>
+
+    <text x="530" y="570" fill="#6e6e73" font-size="10">Audit log</text>
+    <text x="930" y="570" fill="#6e6e73" font-size="10" text-anchor="end">Last updated 2m ago</text>
+  </g>
+</svg>
