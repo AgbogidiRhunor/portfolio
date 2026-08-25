@@ -52,7 +52,6 @@
             --radius: 18px;
         }
 
-         /* REMOVED transform from body - it was breaking the sticky nav */
         body {
             background: var(--bg);
             color: var(--text);
@@ -60,7 +59,6 @@
             letter-spacing: -0.01em;
         }
 
-        /* Applied transform to a wrapper instead */
         .page-wrapper {
             transform: scale(1.2);
             transform-origin: 0 0;
@@ -127,26 +125,249 @@
             border-radius: 0 2px 2px 0;
         }
 
-        .toc-sidebar { position: fixed; left: 24px; top: 50%; transform: translateY(-50%); z-index: 50; display: none; }
+        .toc-sidebar { position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 50; display: none; }
         @media (min-width: 1280px) { .toc-sidebar { display: block; } }
+        .toc-trigger {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 140px;
+            border-radius: 0 10px 10px 0;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-left: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.25s ease;
+        }
+        .toc-trigger::before {
+            content: '';
+            width: 3px;
+            height: 36px;
+            border-radius: 2px;
+            background: #3a3a3c;
+            transition: background 0.25s ease;
+        }
+        .toc-sidebar:hover .toc-trigger { background: rgba(99, 102, 241, 0.08); }
+        .toc-sidebar:hover .toc-trigger::before { background: #a78bfa; }
+        .toc-panel {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%) translateX(-12px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            padding-left: 18px;
+        }
+        .toc-sidebar:hover .toc-panel,
+        .toc-sidebar:focus-within .toc-panel {
+            opacity: 1;
+            transform: translateY(-50%) translateX(0);
+            pointer-events: auto;
+        }
         .toc-link { display: block; padding: 4px 0; font-size: 13px; color: #6e6e73; transition: color 0.2s; text-decoration: none; position: relative; padding-left: 14px; }
         .toc-link::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: #3a3a3c; transition: background 0.2s, transform 0.2s; }
         .toc-link.active { color: #a78bfa; }
         .toc-link.active::before { background: #a78bfa; transform: translateY(-50%) scale(1.4); }
 
-        .img-placeholder {
+        /* ============ SCREENSHOT SYSTEM ============ */
+        .screenshot-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 14px;
+            cursor: pointer;
             background: rgba(255, 255, 255, 0.02);
-            border: 1px dashed rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .screenshot-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1), filter 0.3s ease;
+        }
+        .screenshot-card:hover .screenshot-image {
+            transform: scale(1.035);
+            filter: brightness(1.05);
+        }
+        .screenshot-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.35), transparent 40%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .screenshot-card:hover::after {
+            opacity: 1;
+        }
+        .screenshot-card .expand-hint {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            background: rgba(8, 8, 10, 0.6);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: translateY(4px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+        }
+        .screenshot-card:hover .expand-hint {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .screenshot-card .expand-hint svg {
+            width: 14px;
+            height: 14px;
+            color: #e8e8ed;
+        }
+        .screenshot-card[data-load-failed="true"] .screenshot-image {
+            display: none;
+        }
+
+        /* Architecture image container */
+        .architecture-image-wrap {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            border-radius: 14px;
+            overflow: hidden;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+        .architecture-image {
+            width: 100%;
+            height: auto;
+            max-height: 560px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.25);
+        }
+        .architecture-image[data-load-failed="true"] {
+            display: none;
+        }
+
+        /* ============ LIGHTBOX ============ */
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(4, 4, 6, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+        .lightbox.open {
+            display: flex;
+            opacity: 1;
+        }
+        .lightbox-content {
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 140px;
-            color: #6e6e73;
-            transition: all 0.3s;
+            max-width: 95vw;
+            max-height: 90vh;
         }
-        .img-placeholder:hover { border-color: rgba(139, 92, 246, 0.4); background: rgba(99, 102, 241, 0.04); }
+        .lightbox-image {
+            max-width: 95vw;
+            max-height: 78vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.08);
+            background: #0c0c0e;
+        }
+        .lightbox-caption {
+            margin-top: 16px;
+            text-align: center;
+            color: #e8e8ed;
+        }
+        .lightbox-caption .lb-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f2f2f4;
+        }
+        .lightbox-caption .lb-counter {
+            font-size: 12px;
+            color: #86868b;
+            font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, monospace;
+            margin-top: 2px;
+        }
+        .lightbox-button {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            background: rgba(28, 28, 30, 0.7);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #e8e8ed;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+            backdrop-filter: blur(8px);
+        }
+        .lightbox-button:hover {
+            background: rgba(99, 102, 241, 0.25);
+            border-color: rgba(139, 92, 246, 0.4);
+        }
+        .lightbox-button:active {
+            transform: scale(0.94);
+        }
+        .lightbox-button svg {
+            width: 20px;
+            height: 20px;
+        }
+        .lightbox-close {
+            top: 18px;
+            right: 18px;
+            position: fixed;
+        }
+        .lightbox-prev {
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            position: fixed;
+        }
+        .lightbox-next {
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            position: fixed;
+        }
+        @media (max-width: 640px) {
+            .lightbox-button { width: 38px; height: 38px; }
+            .lightbox-prev { left: 8px; }
+            .lightbox-next { right: 8px; }
+            .lightbox-close { top: 10px; right: 10px; }
+            .lightbox-image { max-height: 68vh; }
+        }
+        body.lightbox-locked {
+            overflow: hidden;
+        }
 
         .roadmap-timeline { position: relative; padding-left: 32px; }
         .roadmap-timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, #6366f1, #8b5cf6, transparent); border-radius: 2px; }
@@ -164,24 +385,27 @@
     <!-- Reading Progress Bar -->
     <div id="progress-bar"></div>
 
-    <!-- Floating Table of Contents (desktop) -->
+    <!-- Floating Table of Contents (desktop) — hidden edge trigger, reveals panel on hover/focus -->
     <nav class="toc-sidebar" aria-label="Table of Contents">
-        <div class="glass p-4 rounded-2xl shadow-2xl" style="min-width: 160px;">
-            <p class="text-xs font-semibold text-[#98989d] mb-3 tracking-widest uppercase">On this page</p>
-            <a href="#overview" class="toc-link">Overview</a>
-            <a href="#problem" class="toc-link">Problem</a>
-            <a href="#solution" class="toc-link">Solution</a>
-            <a href="#roles" class="toc-link">User Roles</a>
-            <a href="#features" class="toc-link">Features</a>
-            <a href="#engineering" class="toc-link">Engineering</a>
-            <a href="#deployment" class="toc-link">Deployment</a>
-            <a href="#architecture" class="toc-link">Architecture</a>
-            <a href="#tech-stack" class="toc-link">Tech Stack</a>
-            <a href="#challenges" class="toc-link">Challenges</a>
-            <a href="#learnings" class="toc-link">Learnings</a>
-            <a href="#roadmap" class="toc-link">Future</a>
-            <a href="#gallery" class="toc-link">Gallery</a>
-            <a href="#reflection" class="toc-link">Reflection</a>
+        <div class="toc-trigger" tabindex="0" aria-label="Show table of contents"></div>
+        <div class="toc-panel">
+            <div class="glass p-4 rounded-2xl shadow-2xl" style="min-width: 160px;">
+                <p class="text-xs font-semibold text-[#98989d] mb-3 tracking-widest uppercase">On this page</p>
+                <a href="#overview" class="toc-link">Overview</a>
+                <a href="#problem" class="toc-link">Problem</a>
+                <a href="#solution" class="toc-link">Solution</a>
+                <a href="#roles" class="toc-link">User Roles</a>
+                <a href="#features" class="toc-link">Features</a>
+                <a href="#engineering" class="toc-link">Engineering</a>
+                <a href="#deployment" class="toc-link">Deployment</a>
+                <a href="#architecture" class="toc-link">Architecture</a>
+                <a href="#tech-stack" class="toc-link">Tech Stack</a>
+                <a href="#challenges" class="toc-link">Challenges</a>
+                <a href="#learnings" class="toc-link">Learnings</a>
+                <a href="#roadmap" class="toc-link">Future</a>
+                <a href="#gallery" class="toc-link">Gallery</a>
+                <a href="#reflection" class="toc-link">Reflection</a>
+            </div>
         </div>
     </nav>
 
@@ -206,9 +430,11 @@
         </div>
         <div class="relative max-w-4xl mx-auto px-5 sm:px-8 text-center">
             <div class="reveal mx-auto mb-10 max-w-2xl gradient-border overflow-hidden rounded-2xl">
-                <div class="img-placeholder h-64 sm:h-80 flex flex-col items-center justify-center bg-white/[0.01]">
-                    <svg class="w-12 h-12 text-[#3a3a3c] mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                    <p class="text-sm text-[#6e6e73] font-mono">Hero Screenshot</p>
+                <div class="screenshot-card" data-lightbox data-title="SIWES Logbook Manager — Overview" style="aspect-ratio: 16 / 9;">
+                    <img src="../img/siweslogbook/landingpage.png" alt="SIWES Logbook Manager hero dashboard" class="screenshot-image" loading="eager" onerror="handleImageError(this)">
+                    <div class="expand-hint" aria-hidden="true">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5"/></svg>
+                    </div>
                 </div>
             </div>
             <h1 class="reveal reveal-delay-1 text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white mb-4">SIWES Logbook Manager</h1>
@@ -287,12 +513,39 @@
                 <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight">Stakeholder Collaboration</h2>
                 <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
             </div>
-            <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-5">
-                <div class="reveal glass p-5 text-center"><div class="img-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Student Dashboard</span></div><h4 class="text-sm font-semibold text-white">Student</h4><p class="text-[#86868b] text-xs mt-1">Submit daily logbook entries, track progress, and receive supervisor feedback.</p></div>
-                <div class="reveal glass p-5 text-center"><div class="img-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Supervisor Dashboard</span></div><h4 class="text-sm font-semibold text-white">Industrial Supervisor</h4><p class="text-[#86868b] text-xs mt-1">Review student entries, provide comments, and approve weekly reports.</p></div>
-                <div class="reveal glass p-5 text-center"><div class="img-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Lecturer Dashboard</span></div><h4 class="text-sm font-semibold text-white">Lecturer</h4><p class="text-[#86868b] text-xs mt-1">Monitor assigned students, review logbook entries, and submit evaluations.</p></div>
-                <div class="reveal glass p-5 text-center"><div class="img-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Coordinator Dashboard</span></div><h4 class="text-sm font-semibold text-white">School Coordinator</h4><p class="text-[#86868b] text-xs mt-1">Manage all students, assign supervisors, and oversee the entire internship cycle.</p></div>
-                <div class="reveal glass p-5 text-center"><div class="img-placeholder h-32 rounded-lg mb-4"><span class="text-xs">Admin Dashboard</span></div><h4 class="text-sm font-semibold text-white">Administrator</h4><p class="text-[#86868b] text-xs mt-1">Full system control, user management, and institutional configuration.</p></div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 justify-items-center">
+                <div class="reveal glass p-5 text-center">
+                    <div class="screenshot-card aspect-video mb-4" data-lightbox data-title="Student Dashboard">
+                        <img src="../img/siweslogbook/studentdashboard.png" alt="Student Dashboard" class="screenshot-image" loading="lazy" onerror="handleImageError(this)">
+                        <div class="expand-hint" aria-hidden="true"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5"/></svg></div>
+                    </div>
+                    <h4 class="text-sm font-semibold text-white">Student</h4>
+                    <p class="text-[#86868b] text-xs mt-1">Submit daily logbook entries, track progress, and receive supervisor feedback.</p>
+                </div>
+                <div class="reveal glass p-5 text-center">
+                    <div class="screenshot-card aspect-video mb-4" data-lightbox data-title="Lecturer Dashboard">
+                        <img src="../img/siweslogbook/lecturerdashboard.png" alt="Lecturer Dashboard" class="screenshot-image" loading="lazy" onerror="handleImageError(this)">
+                        <div class="expand-hint" aria-hidden="true"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5"/></svg></div>
+                    </div>
+                    <h4 class="text-sm font-semibold text-white">Lecturer</h4>
+                    <p class="text-[#86868b] text-xs mt-1">Monitor assigned students, review logbook entries, and submit evaluations.</p>
+                </div>
+                <div class="reveal glass p-5 text-center">
+                    <div class="screenshot-card aspect-video mb-4" data-lightbox data-title="School Coordinator Dashboard">
+                        <img src="../img/siweslogbook/schoolcoordinatordashboard.png" alt="School Coordinator Dashboard" class="screenshot-image" loading="lazy" onerror="handleImageError(this)">
+                        <div class="expand-hint" aria-hidden="true"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5"/></svg></div>
+                    </div>
+                    <h4 class="text-sm font-semibold text-white">School Coordinator</h4>
+                    <p class="text-[#86868b] text-xs mt-1">Manage all students, assign supervisors, and oversee the entire internship cycle.</p>
+                </div>
+                <div class="reveal glass p-5 text-center">
+                    <div class="screenshot-card aspect-video mb-4" data-lightbox data-title="Administrator Dashboard">
+                        <img src="../img/siweslogbook/admindashboard.png" alt="Administrator Dashboard" class="screenshot-image" loading="lazy" onerror="handleImageError(this)">
+                        <div class="expand-hint" aria-hidden="true"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5"/></svg></div>
+                    </div>
+                    <h4 class="text-sm font-semibold text-white">Administrator</h4>
+                    <p class="text-[#86868b] text-xs mt-1">Full system control, user management, and institutional configuration.</p>
+                </div>
             </div>
         </div>
     </section>
@@ -306,12 +559,41 @@
                 <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
             </div>
             <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                <div class="reveal glass overflow-hidden"><div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Student Dashboard</span></div><div class="p-4"><h3 class="text-sm font-semibold text-white">Student Dashboard</h3><p class="text-[#86868b] text-xs mt-1">Personalized overview showing logbook progress, pending reviews, and internship timeline.</p></div></div>
-                <div class="reveal glass overflow-hidden"><div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Daily Logbook Submission</span></div><div class="p-4"><h3 class="text-sm font-semibold text-white">Daily Logbook Submission</h3><p class="text-[#86868b] text-xs mt-1">Rich text entries with date tracking, activity descriptions, and attachment support.</p></div></div>
-                <div class="reveal glass overflow-hidden"><div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Weekly Progress Tracking</span></div><div class="p-4"><h3 class="text-sm font-semibold text-white">Weekly Progress Tracking</h3><p class="text-[#86868b] text-xs mt-1">Aggregated weekly summaries with supervisor validation and lecturer visibility.</p></div></div>
-                <div class="reveal glass overflow-hidden"><div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Supervisor Feedback</span></div><div class="p-4"><h3 class="text-sm font-semibold text-white">Supervisor Feedback</h3><p class="text-[#86868b] text-xs mt-1">Structured comment system with approval flags and notification triggers.</p></div></div>
-                <div class="reveal glass overflow-hidden"><div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Internship Evaluation</span></div><div class="p-4"><h3 class="text-sm font-semibold text-white">Internship Evaluation</h3><p class="text-[#86868b] text-xs mt-1">Multi-criteria assessment forms with scoring rubrics and final grade computation.</p></div></div>
-                <div class="reveal glass overflow-hidden"><div class="img-placeholder h-40 rounded-none rounded-t-xl"><span class="text-xs">Administrative Dashboard</span></div><div class="p-4"><h3 class="text-sm font-semibold text-white">Administrative Dashboard</h3><p class="text-[#86868b] text-xs mt-1">Institution-wide overview with student progress, placement tracking, and reporting.</p></div></div>
+                <div class="reveal glass overflow-hidden">
+                    <div class="screenshot-card aspect-video rounded-none rounded-t-[17px]" data-lightbox data-title="Student Dashboard">
+                        <img src="../img/siweslogbook/studentdashboard.png" alt="Student Dashboard" class="screenshot-image" loading="lazy" onerror="handleImageError(this)">
+                        <div class="expand-hint" aria-hidden="true"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5"/></svg></div>
+                    </div>
+                    <div class="p-4"><h3 class="text-sm font-semibold text-white">Student Dashboard</h3><p class="text-[#86868b] text-xs mt-1">Personalized overview showing logbook progress, pending reviews, and internship timeline.</p></div>
+                </div>
+                <div class="reveal glass overflow-hidden">
+                    <div class="screenshot-card aspect-video rounded-none rounded-t-[17px]" data-lightbox data-title="Daily Logbook Submission">
+                        <img src="../img/siweslogbook/dailylogbooksubmission.png" alt="Daily Logbook Submission" class="screenshot-image" loading="lazy" onerror="handleImageError(this)">
+                        <div class="expand-hint" aria-hidden="true"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5"/></svg></div>
+                    </div>
+                    <div class="p-4"><h3 class="text-sm font-semibold text-white">Daily Logbook Submission</h3><p class="text-[#86868b] text-xs mt-1">Rich text entries with date tracking, activity descriptions, and attachment support.</p></div>
+                </div>
+                <div class="reveal glass overflow-hidden">
+                    <div class="screenshot-card aspect-video rounded-none rounded-t-[17px]" data-lightbox data-title="Weekly Progress Tracking">
+                        <img src="../img/siweslogbook/weeklyprogresstracking.png" alt="Weekly Progress Tracking" class="screenshot-image" loading="lazy" onerror="handleImageError(this)">
+                        <div class="expand-hint" aria-hidden="true"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5"/></svg></div>
+                    </div>
+                    <div class="p-4"><h3 class="text-sm font-semibold text-white">Weekly Progress Tracking</h3><p class="text-[#86868b] text-xs mt-1">Aggregated weekly summaries with supervisor validation and lecturer visibility.</p></div>
+                </div>
+                <div class="reveal glass overflow-hidden">
+                    <div class="screenshot-card aspect-video rounded-none rounded-t-[17px]" data-lightbox data-title="Internship Evaluation">
+                        <img src="../img/siweslogbook/internshipevaluation.png" alt="Internship Evaluation" class="screenshot-image" loading="lazy" onerror="handleImageError(this)">
+                        <div class="expand-hint" aria-hidden="true"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5"/></svg></div>
+                    </div>
+                    <div class="p-4"><h3 class="text-sm font-semibold text-white">Internship Evaluation</h3><p class="text-[#86868b] text-xs mt-1">Multi-criteria assessment forms with scoring rubrics and final grade computation.</p></div>
+                </div>
+                <div class="reveal glass overflow-hidden">
+                    <div class="screenshot-card aspect-video rounded-none rounded-t-[17px]" data-lightbox data-title="Administrative Dashboard">
+                        <img src="../img/siweslogbook/admindashboard.png" alt="Administrative Dashboard" class="screenshot-image" loading="lazy" onerror="handleImageError(this)">
+                        <div class="expand-hint" aria-hidden="true"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5h-4m4 0v-4m0 4l-5-5"/></svg></div>
+                    </div>
+                    <div class="p-4"><h3 class="text-sm font-semibold text-white">Administrative Dashboard</h3><p class="text-[#86868b] text-xs mt-1">Institution-wide overview with student progress, placement tracking, and reporting.</p></div>
+                </div>
             </div>
         </div>
     </section>
@@ -348,8 +630,18 @@
                 <p>This architecture prioritizes reliability, security, and maintainability — keeping the application available while minimizing operational complexity for a single-server deployment.</p>
             </div>
             <div class="grid sm:grid-cols-2 gap-5 mt-8">
-                <div class="reveal glass p-6 text-center"><div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Development Environment</span></div><p class="text-[#86868b] text-xs">Local setup with Django development server and SQLite</p></div>
-                <div class="reveal glass p-6 text-center"><div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Production Architecture</span></div><p class="text-[#86868b] text-xs">AWS EC2 • Nginx • Gunicorn • PostgreSQL</p></div>
+                <div class="reveal glass p-6 text-center">
+                    <div class="architecture-image-wrap mb-4" data-lightbox data-title="Development Environment">
+                        <img src="../img/siweslogbook/development-environment.svg" alt="SIWES Logbook Manager local development environment diagram" class="architecture-image" loading="lazy" onerror="handleImageError(this)">
+                    </div>
+                    <p class="text-[#86868b] text-xs">Local setup with Django development server and SQLite</p>
+                </div>
+                <div class="reveal glass p-6 text-center">
+                    <div class="architecture-image-wrap mb-4" data-lightbox data-title="Production Architecture">
+                        <img src="../img/siweslogbook/deployment-architecture.svg" alt="SIWES Logbook Manager production architecture diagram showing AWS EC2, Nginx, Gunicorn, and PostgreSQL" class="architecture-image" loading="lazy" onerror="handleImageError(this)">
+                    </div>
+                    <p class="text-[#86868b] text-xs">AWS EC2 • Nginx • Gunicorn • PostgreSQL</p>
+                </div>
             </div>
         </div>
     </section>
@@ -363,12 +655,42 @@
                 <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
             </div>
             <div class="grid sm:grid-cols-2 gap-5">
-                <div class="reveal glass p-6 text-center"><div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Application Architecture</span></div><p class="text-[#86868b] text-xs">Django apps, service layer, and template structure</p></div>
-                <div class="reveal glass p-6 text-center"><div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Database ERD</span></div><p class="text-[#86868b] text-xs">Entity relationships across students, placements, and evaluations</p></div>
-                <div class="reveal glass p-6 text-center"><div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Authentication Flow</span></div><p class="text-[#86868b] text-xs">Login, role verification, and session management</p></div>
-                <div class="reveal glass p-6 text-center"><div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Approval Workflow</span></div><p class="text-[#86868b] text-xs">Student → Supervisor → Lecturer → Coordinator chain</p></div>
-                <div class="reveal glass p-6 text-center"><div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Logbook Submission Flow</span></div><p class="text-[#86868b] text-xs">Daily entry creation through approval lifecycle</p></div>
-                <div class="reveal glass p-6 text-center"><div class="img-placeholder h-48 mb-4 rounded-lg"><span class="text-sm">Deployment Architecture</span></div><p class="text-[#86868b] text-xs">AWS EC2, Nginx, Gunicorn, and static file serving</p></div>
+                <div class="reveal glass p-6 text-center">
+                    <div class="architecture-image-wrap mb-4" data-lightbox data-title="Application Architecture">
+                        <img src="../img/siweslogbook/application-architecture.svg" alt="SIWES Logbook Manager application architecture diagram showing Django apps and service layer" class="architecture-image" loading="lazy" onerror="handleImageError(this)">
+                    </div>
+                    <p class="text-[#86868b] text-xs">Django apps, service layer, and template structure</p>
+                </div>
+                <div class="reveal glass p-6 text-center">
+                    <div class="architecture-image-wrap mb-4" data-lightbox data-title="Database ERD">
+                        <img src="../img/siweslogbook/database-erd.svg" alt="SIWES Logbook Manager database entity relationship diagram" class="architecture-image" loading="lazy" onerror="handleImageError(this)">
+                    </div>
+                    <p class="text-[#86868b] text-xs">Entity relationships across students, placements, and evaluations</p>
+                </div>
+                <div class="reveal glass p-6 text-center">
+                    <div class="architecture-image-wrap mb-4" data-lightbox data-title="Authentication Flow">
+                        <img src="../img/siweslogbook/authentication-flow.svg" alt="SIWES Logbook Manager authentication flow diagram" class="architecture-image" loading="lazy" onerror="handleImageError(this)">
+                    </div>
+                    <p class="text-[#86868b] text-xs">Login, role verification, and session management</p>
+                </div>
+                <div class="reveal glass p-6 text-center">
+                    <div class="architecture-image-wrap mb-4" data-lightbox data-title="Approval Workflow">
+                        <img src="../img/siweslogbook/approval-workflow.svg" alt="SIWES Logbook Manager approval workflow diagram: student to supervisor to lecturer to coordinator" class="architecture-image" loading="lazy" onerror="handleImageError(this)">
+                    </div>
+                    <p class="text-[#86868b] text-xs">Student → Supervisor → Lecturer → Coordinator chain</p>
+                </div>
+                <div class="reveal glass p-6 text-center">
+                    <div class="architecture-image-wrap mb-4" data-lightbox data-title="Logbook Submission Flow">
+                        <img src="../img/siweslogbook/logbook-submission-flow.svg" alt="SIWES Logbook Manager logbook submission flow diagram" class="architecture-image" loading="lazy" onerror="handleImageError(this)">
+                    </div>
+                    <p class="text-[#86868b] text-xs">Daily entry creation through approval lifecycle</p>
+                </div>
+                <div class="reveal glass p-6 text-center">
+                    <div class="architecture-image-wrap mb-4" data-lightbox data-title="Deployment Architecture">
+                        <img src="../img/siweslogbook/deployment-architecture.svg" alt="SIWES Logbook Manager deployment architecture diagram showing AWS EC2, Nginx, Gunicorn, and static file serving" class="architecture-image" loading="lazy" onerror="handleImageError(this)">
+                    </div>
+                    <p class="text-[#86868b] text-xs">AWS EC2, Nginx, Gunicorn, and static file serving</p>
+                </div>
             </div>
         </div>
     </section>
@@ -447,30 +769,6 @@
         </div>
     </section>
 
-    <!-- Screenshot Gallery -->
-    <section id="gallery" class="py-20 sm:py-28 bg-white/[0.01]">
-        <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-10">
-            <div class="text-center mb-14 reveal">
-                <span class="text-indigo-400 font-mono text-xs tracking-[0.15em] uppercase">Gallery</span>
-                <h2 class="text-3xl sm:text-4xl font-bold mt-3 text-white tracking-tight">Screenshots</h2>
-                <div class="w-12 h-[2px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full mx-auto mt-5"></div>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Student Dashboard</span></div>
-                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Daily Logbook</span></div>
-                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Weekly Reports</span></div>
-                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Supervisor Dashboard</span></div>
-                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Lecturer Dashboard</span></div>
-                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Coordinator Dashboard</span></div>
-                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Administrator Dashboard</span></div>
-                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Evaluation Page</span></div>
-                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Reports</span></div>
-                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Profile Settings</span></div>
-                <div class="reveal img-placeholder h-32 sm:h-40 rounded-xl"><span class="text-xs">Deployment Diagram</span></div>
-            </div>
-        </div>
-    </section>
-
     <!-- Final Reflection -->
     <section id="reflection" class="py-20 sm:py-28">
         <div class="max-w-3xl mx-auto px-5 sm:px-8 lg:px-10 text-center">
@@ -489,21 +787,16 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                         Previous Project
                     </a>
-
-                    <!-- Back to Portfolio -->
                     <a href="../index.html" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.06] border border-white/[0.1] text-sm font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                         Back to Portfolio
                     </a>
-
-                    <!-- Next Project (adjust href to your actual next case study) -->
                     <a href="../projects/pointpulse.html" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.06] border border-white/[0.1] text-sm font-medium text-[#d1d1d6] hover:bg-white/[0.12] transition-all">
                         Next Project
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                     </a>
                 </div>
-                </div>
-
+            </div>
         </div>
     </section>
 
@@ -512,7 +805,45 @@
         <p>SIWES Logbook Manager — Built by Rhunor A. &copy; <span id="current-year"></span></p>
     </footer>
 
+    <!-- ============ CENTRALIZED LIGHTBOX ============ -->
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer">
+        <button class="lightbox-button lightbox-close" id="lightbox-close" aria-label="Close image viewer">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        <button class="lightbox-button lightbox-prev" id="lightbox-prev" aria-label="Previous image">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <button class="lightbox-button lightbox-next" id="lightbox-next" aria-label="Next image">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </button>
+        <div class="lightbox-content" id="lightbox-content">
+            <img class="lightbox-image" id="lightbox-image" src="" alt="">
+            <div class="lightbox-caption">
+                <div class="lb-title" id="lightbox-title"></div>
+                <div class="lb-counter" id="lightbox-counter"></div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Fallback for images that fail to load — swap them for the existing placeholder style
+        function handleImageError(imgEl) {
+            const card = imgEl.closest('[data-lightbox]');
+            if (card) {
+                card.setAttribute('data-load-failed', 'true');
+                card.classList.add('img-placeholder');
+                card.style.cursor = 'default';
+                const label = card.getAttribute('data-title') || 'Image not available';
+                const span = document.createElement('span');
+                span.className = 'text-xs';
+                span.textContent = label;
+                card.appendChild(span);
+            } else {
+                imgEl.setAttribute('data-load-failed', 'true');
+                imgEl.style.display = 'none';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('current-year').textContent = new Date().getFullYear();
 
@@ -557,6 +888,96 @@
                     const target = document.querySelector(this.getAttribute('href'));
                     if (target) window.scrollTo({ top: target.offsetTop - 80, behavior: 'smooth' });
                 });
+            });
+
+            // ============ LIGHTBOX LOGIC ============
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImage = document.getElementById('lightbox-image');
+            const lightboxTitle = document.getElementById('lightbox-title');
+            const lightboxCounter = document.getElementById('lightbox-counter');
+            const lightboxContent = document.getElementById('lightbox-content');
+            const btnClose = document.getElementById('lightbox-close');
+            const btnPrev = document.getElementById('lightbox-prev');
+            const btnNext = document.getElementById('lightbox-next');
+
+            const galleryItems = Array.from(document.querySelectorAll('[data-lightbox]'));
+            let currentIndex = 0;
+
+            function getItemSrc(item) {
+                const img = item.querySelector('img');
+                return img ? img.getAttribute('src') : null;
+            }
+
+            function getUsableItems() {
+                return galleryItems.filter(el =>
+                    el.getAttribute('data-load-failed') !== 'true' && getItemSrc(el)
+                );
+            }
+
+            function openLightbox(item) {
+                const usable = getUsableItems();
+                const idx = usable.indexOf(item);
+                if (idx === -1) return;
+                currentIndex = idx;
+                renderLightbox();
+                lightbox.classList.add('open');
+                document.body.classList.add('lightbox-locked');
+            }
+
+            function renderLightbox() {
+                const usable = getUsableItems();
+                if (usable.length === 0) return;
+                const item = usable[currentIndex];
+                const src = getItemSrc(item);
+                const title = item.getAttribute('data-title') || '';
+                lightboxImage.src = src;
+                lightboxImage.alt = title;
+                lightboxTitle.textContent = title;
+                lightboxCounter.textContent = (currentIndex + 1) + ' / ' + usable.length;
+            }
+
+            function closeLightbox() {
+                lightbox.classList.remove('open');
+                document.body.classList.remove('lightbox-locked');
+                lightboxImage.src = '';
+            }
+
+            function showPrev() {
+                const usable = getUsableItems();
+                if (usable.length === 0) return;
+                currentIndex = (currentIndex - 1 + usable.length) % usable.length;
+                renderLightbox();
+            }
+
+            function showNext() {
+                const usable = getUsableItems();
+                if (usable.length === 0) return;
+                currentIndex = (currentIndex + 1) % usable.length;
+                renderLightbox();
+            }
+
+            galleryItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    if (item.getAttribute('data-load-failed') === 'true') return;
+                    openLightbox(item);
+                });
+            });
+
+            btnClose.addEventListener('click', closeLightbox);
+            btnPrev.addEventListener('click', showPrev);
+            btnNext.addEventListener('click', showNext);
+
+            lightbox.addEventListener('click', (e) => {
+                if (!lightboxContent.contains(e.target)) {
+                    closeLightbox();
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (!lightbox.classList.contains('open')) return;
+                if (e.key === 'Escape') closeLightbox();
+                if (e.key === 'ArrowLeft') showPrev();
+                if (e.key === 'ArrowRight') showNext();
             });
         });
     </script>
