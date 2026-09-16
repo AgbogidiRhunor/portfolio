@@ -388,7 +388,7 @@
                 class="inline-flex items-center px-7 py-3.5 rounded-full bg-white text-[#1d1d1f] font-semibold text-sm hover:bg-[#e8e8ed] transition-all duration-300 shadow-lg shadow-white/10 hover:shadow-white/20 hover:scale-[1.03] active:scale-[0.97] tracking-tight">
                 View Projects
             </a>
-            <a href="#resume-section"
+            <a href="./resume.pdf" download="Rhunor-A-Resume.pdf"
             class="inline-flex items-center px-7 py-3.5 rounded-full border border-white/[0.15] text-white font-semibold text-sm hover:border-indigo-400/50 hover:text-indigo-300 hover:bg-indigo-500/8 transition-all duration-300 active:scale-[0.97] tracking-tight">
             Download Resume
         </a>
@@ -1058,7 +1058,7 @@
             </p>
             <div class="flex flex-wrap items-center justify-center gap-4">
                 <a href="#contact" class="px-7 py-3.5 rounded-full bg-white text-[#1d1d1f] font-semibold text-sm hover:bg-[#e8e8ed] transition-all duration-300 shadow-lg shadow-white/10 tracking-tight">Get In Touch</a>
-                <a href="YOUR_RESUME_URL" class="px-7 py-3.5 rounded-full border border-white/[0.15] text-white font-semibold text-sm hover:border-indigo-400/50 hover:text-indigo-300 transition-all duration-300 tracking-tight" download>Download Resume</a>
+                <a href="./resume.pdf" download="Rhunor-A-Resume.pdf" class="px-7 py-3.5 rounded-full border border-white/[0.15] text-white font-semibold text-sm hover:border-indigo-400/50 hover:text-indigo-300 transition-all duration-300 tracking-tight">Download Resume</a>
             </div>
         </div>
     </div>
@@ -1361,15 +1361,6 @@
                 clearTimeout(toastTimer);
                 toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
             }, 1000);
-        });
-
-        // ===== RESUME DOWNLOAD (Print to PDF) =====
-        const resumeDownloadLinks = document.querySelectorAll('a[href="#resume-section"]');
-        resumeDownloadLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                window.print();
-            });
         });
 
         console.log('%c🚀 Portfolio Ready %c| %cRhunor A %c· Software Engineer',
